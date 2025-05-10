@@ -3,18 +3,18 @@
  */
 
 // DOM-Elemente erst nach vollständigem Laden ansprechen
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function() {
     
     // Tooltips initialisieren
     initTooltips();
     
     // Filter-Funktionalität (wenn auf Filter-Seite)
-    if (document.getElementById('filterForm')) {
+    if (document.getElementById("filterForm")) {
         initFilters();
     }
     
     // Suchfunktionalität (wenn auf der Suchseite)
-    if (document.getElementById('searchForm')) {
+    if (document.getElementById("searchForm")) {
         initSearchForm();
     }
     
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialisiert Bootstrap-Tooltips
  */
 function initTooltips() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll("[data-bs-toggle=\"tooltip\"]"));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
@@ -39,13 +39,13 @@ function initTooltips() {
  * Initialisiert Filter-Funktionalität
  */
 function initFilters() {
-    const filterForm = document.getElementById('filterForm');
-    const animeSelect = document.getElementById('animeSelect');
-    const seasonSelect = document.getElementById('seasonSelect');
+    const filterForm = document.getElementById("filterForm");
+    const animeSelect = document.getElementById("animeSelect");
+    const seasonSelect = document.getElementById("seasonSelect");
     
     // Bei Änderung des Anime-Select werden passende Staffeln nachgeladen
     if (animeSelect) {
-        animeSelect.addEventListener('change', function() {
+        animeSelect.addEventListener("change", function() {
             const animeId = this.value;
             
             if (!animeId) {
@@ -63,9 +63,9 @@ function initFilters() {
     }
     
     // Filter-Reset-Button
-    const resetButton = document.getElementById('resetFilters');
+    const resetButton = document.getElementById("resetFilters");
     if (resetButton) {
-        resetButton.addEventListener('click', function(e) {
+        resetButton.addEventListener("click", function(e) {
             e.preventDefault();
             filterForm.reset();
             
@@ -85,15 +85,15 @@ function initFilters() {
  * @param {number} animeId - ID des Animes
  */
 function fetchSeasons(animeId) {
-    const seasonSelect = document.getElementById('seasonSelect');
+    const seasonSelect = document.getElementById("seasonSelect");
     
     // Zurücksetzen und Ladestatus anzeigen
     while (seasonSelect.options.length > 1) {
         seasonSelect.remove(1);
     }
     
-    const loadingOption = document.createElement('option');
-    loadingOption.text = 'Lädt...';
+    const loadingOption = document.createElement("option");
+    loadingOption.text = "Lädt...";
     loadingOption.disabled = true;
     seasonSelect.add(loadingOption);
     seasonSelect.disabled = true;
@@ -108,7 +108,7 @@ function fetchSeasons(animeId) {
             if (data.seasons && data.seasons.length > 0) {
                 // Staffeln hinzufügen
                 data.seasons.forEach(season => {
-                    const option = document.createElement('option');
+                    const option = document.createElement("option");
                     option.value = season.id;
                     option.text = season.name;
                     seasonSelect.add(option);
@@ -116,16 +116,16 @@ function fetchSeasons(animeId) {
                 
                 seasonSelect.disabled = false;
             } else {
-                const noSeasonsOption = document.createElement('option');
-                noSeasonsOption.text = 'Keine Staffeln gefunden';
+                const noSeasonsOption = document.createElement("option");
+                noSeasonsOption.text = "Keine Staffeln gefunden";
                 noSeasonsOption.disabled = true;
                 seasonSelect.add(noSeasonsOption);
             }
         })
         .catch(error => {
-            console.error('Fehler beim Laden der Staffeln:', error);
-            const errorOption = document.createElement('option');
-            errorOption.text = 'Fehler beim Laden der Staffeln';
+            console.error("Fehler beim Laden der Staffeln:", error);
+            const errorOption = document.createElement("option");
+            errorOption.text = "Fehler beim Laden der Staffeln";
             errorOption.disabled = true;
             
             // Lade-Option entfernen
@@ -138,18 +138,18 @@ function fetchSeasons(animeId) {
  * Initialisiert das Suchformular
  */
 function initSearchForm() {
-    const searchForm = document.getElementById('searchForm');
-    const searchResults = document.getElementById('searchResults');
-    const searchInput = document.getElementById('searchInput');
-    const searchTypeSelect = document.getElementById('searchType');
+    const searchForm = document.getElementById("searchForm");
+    const searchResults = document.getElementById("searchResults");
+    const searchInput = document.getElementById("searchInput");
+    const searchTypeSelect = document.getElementById("searchType");
     
     if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
+        searchForm.addEventListener("submit", function(e) {
             e.preventDefault();
             
             const query = searchInput.value.trim();
             if (query.length < 2) {
-                showSearchError('Die Suchanfrage muss mindestens 2 Zeichen enthalten.');
+                showSearchError("Die Suchanfrage muss mindestens 2 Zeichen enthalten.");
                 return;
             }
             
@@ -172,18 +172,18 @@ function initSearchForm() {
                     displaySearchResults(data);
                 })
                 .catch(error => {
-                    console.error('Fehler bei der Suche:', error);
-                    showSearchError('Ein Fehler ist bei der Suche aufgetreten. Bitte versuche es später erneut.');
+                    console.error("Fehler bei der Suche:", error);
+                    showSearchError("Ein Fehler ist bei der Suche aufgetreten. Bitte versuche es später erneut.");
                 });
         });
         
         // Automatische Suche, wenn der URL-Parameter 'q' vorhanden ist
         const urlParams = new URLSearchParams(window.location.search);
-        const queryParam = urlParams.get('q');
+        const queryParam = urlParams.get("q");
         
         if (queryParam && queryParam.length >= 2) {
             searchInput.value = queryParam;
-            searchForm.dispatchEvent(new Event('submit'));
+            searchForm.dispatchEvent(new Event("submit"));
         }
     }
 }
@@ -193,7 +193,7 @@ function initSearchForm() {
  * @param {string} message - Fehlermeldung
  */
 function showSearchError(message) {
-    const searchResults = document.getElementById('searchResults');
+    const searchResults = document.getElementById("searchResults");
     searchResults.innerHTML = `
         <div class="alert alert-danger" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i>${message}
@@ -206,8 +206,8 @@ function showSearchError(message) {
  * @param {Object} data - Suchergebnisdaten
  */
 function displaySearchResults(data) {
-    const searchResults = document.getElementById('searchResults');
-    let resultsHtml = '';
+    const searchResults = document.getElementById("searchResults");
+    let resultsHtml = "";
     
     const animeCount = data.animes ? data.animes.length : 0;
     const seasonCount = data.seasons ? data.seasons.length : 0;
@@ -272,10 +272,10 @@ function displaySearchResults(data) {
  */
 function renderAnimeResults(animes) {
     if (!animes || animes.length === 0) {
-        return '<div class="text-center py-3">Keine Anime-Ergebnisse gefunden.</div>';
+        return "<div class=\"text-center py-3\">Keine Anime-Ergebnisse gefunden.</div>";
     }
     
-    let html = '<div class="list-group">';
+    let html = "<div class=\"list-group\">";
     
     animes.forEach(anime => {
         html += `
@@ -290,7 +290,7 @@ function renderAnimeResults(animes) {
         `;
     });
     
-    html += '</div>';
+    html += "</div>";
     return html;
 }
 
@@ -301,10 +301,10 @@ function renderAnimeResults(animes) {
  */
 function renderSeasonResults(seasons) {
     if (!seasons || seasons.length === 0) {
-        return '<div class="text-center py-3">Keine Staffel-Ergebnisse gefunden.</div>';
+        return "<div class=\"text-center py-3\">Keine Staffel-Ergebnisse gefunden.</div>";
     }
     
-    let html = '<div class="list-group">';
+    let html = "<div class=\"list-group\">";
     
     seasons.forEach(season => {
         html += `
@@ -319,7 +319,7 @@ function renderSeasonResults(seasons) {
         `;
     });
     
-    html += '</div>';
+    html += "</div>";
     return html;
 }
 
@@ -330,14 +330,14 @@ function renderSeasonResults(seasons) {
  */
 function renderEpisodeResults(episodes) {
     if (!episodes || episodes.length === 0) {
-        return '<div class="text-center py-3">Keine Episoden-Ergebnisse gefunden.</div>';
+        return "<div class=\"text-center py-3\">Keine Episoden-Ergebnisse gefunden.</div>";
     }
     
-    let html = '<div class="list-group">';
+    let html = "<div class=\"list-group\">";
     
     episodes.forEach(episode => {
         const resolutionText = episode.resolution_width && episode.resolution_height ? 
-            `${episode.resolution_width}x${episode.resolution_height}` : 'Unbekannt';
+            `${episode.resolution_width}x${episode.resolution_height}` : "Unbekannt";
         
         html += `
             <a href="/episode/${episode.id}" class="list-group-item list-group-item-action">
@@ -346,9 +346,9 @@ function renderEpisodeResults(episodes) {
                     <span class="badge bg-info">${resolutionText}</span>
                 </div>
                 <p class="mb-1">
-                    <span class="badge bg-secondary me-2">${episode.video_codec || 'Unbekannter Codec'}</span>
+                    <span class="badge bg-secondary me-2">${episode.video_codec || "Unbekannter Codec"}</span>
                     <span class="badge bg-secondary me-2">${episode.file_extension}</span>
-                    ${episode.hdr_format ? `<span class="badge bg-warning text-dark me-2">${episode.hdr_format}</span>` : ''}
+                    ${episode.hdr_format ? `<span class="badge bg-warning text-dark me-2">${episode.hdr_format}</span>` : ""}
                 </p>
                 <p class="mb-1 text-muted small">
                     <i class="fas fa-file-video me-2"></i>${episode.file_path}
@@ -357,7 +357,7 @@ function renderEpisodeResults(episodes) {
         `;
     });
     
-    html += '</div>';
+    html += "</div>";
     return html;
 }
 
@@ -365,14 +365,14 @@ function renderEpisodeResults(episodes) {
  * Aktualisiert alle Fortschrittsbalken auf der Seite
  */
 function updateProgressBars() {
-    const progressBars = document.querySelectorAll('.progress-bar[data-percentage]');
+    const progressBars = document.querySelectorAll(".progress-bar[data-percentage]");
     
     progressBars.forEach(bar => {
-        const percentage = bar.getAttribute('data-percentage');
+        const percentage = bar.getAttribute("data-percentage");
         
         // Animation für den Fortschrittsbalken
         setTimeout(() => {
-            bar.style.width = percentage + '%';
+            bar.style.width = percentage + "%";
         }, 100);
     });
 }
@@ -381,7 +381,7 @@ function updateProgressBars() {
  * Passt das Intervall für Karusselle an
  */
 function adjustCarouselInterval() {
-    const carousels = document.querySelectorAll('.carousel');
+    const carousels = document.querySelectorAll(".carousel");
     
     carousels.forEach(carousel => {
         // Zeit auf 8 Sekunden erhöhen
@@ -398,15 +398,15 @@ function adjustCarouselInterval() {
  * @returns {string} Formatierte Größe
  */
 function formatBytes(bytes, decimals = 2) {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
 /**
@@ -420,17 +420,17 @@ function formatDuration(ms) {
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
     
-    let result = '';
+    let result = "";
     
     if (hours > 0) {
-        result += hours + ' Std. ';
+        result += hours + " Std. ";
     }
     
     if (minutes > 0 || hours > 0) {
-        result += minutes + ' Min. ';
+        result += minutes + " Min. ";
     }
     
-    result += remainingSeconds + ' Sek.';
+    result += remainingSeconds + " Sek.";
     
     return result;
 }

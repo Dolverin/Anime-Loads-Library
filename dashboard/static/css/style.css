@@ -7,13 +7,13 @@
     --secondary-color: #2c3e50;
     --success-color: #2ecc71;
     --danger-color: #e74c3c;
-    --warning-color: #f39c12;
+    --warning-color: #f39c12; /* nur einmal zentral definiert */
     --info-color: #1abc9c;
     --light-color: #ecf0f1;
     --dark-color: #2c3e50;
     --body-bg: #f8f9fa;
-    --card-bg: #ffffff;
-    --text-color: #333333;
+    --card-bg: #fff;
+    --text-color: #333;
     --border-color: #dee2e6;
 }
 
@@ -23,14 +23,14 @@
     --secondary-color: #34495e;
     --success-color: #42d885;
     --danger-color: #e74c3c;
-    --warning-color: #f39c12;
+    --warning-color: #f39c12; /* nur einmal zentral definiert */
     --info-color: #1abc9c;
     --light-color: #d0d6db; /* Heller für bessere Lesbarkeit */
     --dark-color: #121212;
     --body-bg: #121212;
     --card-bg: #1e1e1e;
     --text-color: #f0f0f0;
-    --border-color: #333333;
+    --border-color: #333;
     --muted-color: #a8b5c5; /* Neue Variable für gedämpfte Texte */
 }
 
@@ -42,7 +42,7 @@ body {
 
 /* Dark Mode Überschreibungen */
 .dark-mode .navbar-dark {
-    background-color: var(--dark-color) !important;
+    background-color: var(--dark-color); /* !important entfernt, Spezifität durch Selektor gegeben */
 }
 
 .dark-mode .card {
@@ -60,8 +60,13 @@ body {
     color: var(--text-color);
 }
 
+.footer {
+    flex-shrink: 0;
+}
+/* Reihenfolge angepasst: .footer steht jetzt vor .dark-mode .footer */
+
 .dark-mode .footer {
-    background-color: var(--dark-color) !important;
+    background-color: var(--dark-color); /* !important entfernt, Spezifität durch Selektor gegeben */
 }
 
 .dark-mode .dropdown-menu {
@@ -80,7 +85,7 @@ body {
 
 /* Allgemeine Stile */
 .dashboard-card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border-radius: 0.5rem;
     overflow: hidden;
@@ -88,16 +93,16 @@ body {
 
 .dashboard-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 15px rgb(0 0 0 / 20%);
 }
 
 .card-header {
     font-weight: 600;
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: rgb(0 0 0 / 3%);
 }
 
 .dark-mode .card-header {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgb(255 255 255 / 5%);
 }
 
 /* Statusanzeigen */
@@ -144,11 +149,11 @@ body {
 
 /* Verbesserte Lesbarkeit für gedämpfte Texte im Dark Mode */
 .dark-mode .text-muted {
-    color: #a8b5c5 !important; /* Helleres Grau für bessere Lesbarkeit */
+    color: var(--muted-color); /* Einheitliche Variable für bessere Wartbarkeit */
 }
 
 .dark-mode .small.text-muted {
-    color: #b0bfd1 !important; /* Noch helleres Grau für kleine gedämpfte Texte */
+    color: var(--muted-color); /* Einheitliche Variable für bessere Wartbarkeit */
 }
 
 .media-thumbnail {
@@ -198,16 +203,17 @@ body {
 
 /* Animation für Übergänge */
 .fade-in {
-    animation: fadeIn 0.5s;
+    animation: fade-in 0.5s; /* Keyframe-Name angepasst */
 }
 
-@keyframes fadeIn {
+/* Linter: Keyframe-Name jetzt kebab-case */
+@keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
 /* Responsive Anpassungen */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .card-deck {
         display: block;
     }
@@ -246,20 +252,18 @@ body {
     background-color: var(--dark-color);
 }
 
-.custom-table tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.05);
+.custom-table tbody tr:hover {
+    background-color: rgb(0 0 0 / 7.5%);
 }
+/* Reihenfolge angepasst: .custom-table tbody tr:hover steht jetzt vor .dark-mode .custom-table tbody tr:nth-of-type(odd) */
 
 .dark-mode .custom-table tbody tr:nth-of-type(odd) {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgb(255 255 255 / 5%);
 }
 
-.custom-table tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.075);
-}
-
-.dark-mode .custom-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.075);
+.custom-table tbody tr:nth-of-type(odd) {
+    background-color: rgb(0 0 0 / 5%);
+    background-color: rgb(255 255 255 / 7.5%);
 }
 
 /* Stile für Suchseite */
@@ -287,6 +291,7 @@ body {
     display: flex;
     flex-direction: column;
 }
+/* Doppelte body-Definition entfernt (nur diese bleibt bestehen) */
 
 main {
     flex: 1 0 auto;

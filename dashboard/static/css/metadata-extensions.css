@@ -60,7 +60,7 @@
 .metadata-card {
     border-radius: 8px;
     border: none;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
     transition: transform 0.2s;
     margin-bottom: 1.5rem;
 }
@@ -134,7 +134,7 @@
 
 .dark-mode .metadata-card {
     background-color: #1e1e1e;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 30%);
 }
 
 /* Metadaten Wert Styling */

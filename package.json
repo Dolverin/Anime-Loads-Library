@@ -1,0 +1,11 @@
+{
+  "name": "anime-loads-dashboard",
+  "version": "1.0.0",
+  "description": "Linter-Setup für Anime-Loads-Library (stylelint & eslint)",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^9.26.0",
+    "stylelint": "^16.19.1",
+    "stylelint-config-standard": "^38.0.0"
+  }
+}
