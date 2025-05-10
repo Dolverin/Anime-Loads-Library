@@ -166,159 +166,299 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Hilfsfunktionen für Fehlerbehandlung
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+    }
+    
+    function showMessage(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="alert alert-info">${message}</div>`;
+        }
+    }
+    
+    function checkAndCreateCanvas(containerId, canvasId) {
+        const container = document.getElementById(containerId);
+        if (!container) return false;
+        
+        const existingCanvas = document.getElementById(canvasId);
+        if (!existingCanvas) {
+            // Canvas nicht gefunden - neu erstellen
+            const canvas = document.createElement('canvas');
+            canvas.id = canvasId;
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        }
+        return true;
+    }
+    
     // Sammlungsstatistiken laden
-    fetch('/api/stats')
-        .then(response => response.json())
-        .then(data => {
-            let statsHtml = `
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Animes:</span>
-                    <strong>${data.animes_count}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Staffeln:</span>
-                    <strong>${data.seasons_count}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Episoden:</span>
-                    <strong>${data.episodes_count}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Gesamtgröße:</span>
-                    <strong>${data.total_size_formatted}</strong>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>Gesamtdauer:</span>
-                    <strong>${data.total_duration_formatted}</strong>
-                </div>
-            `;
-            document.getElementById('collection-stats').innerHTML = statsHtml;
-            
-            // Format-Statistiken
-            if (data.codec_distribution && data.codec_distribution.length > 0) {
-                let formatHtml = '<ul class="list-unstyled">';
-                for (let i = 0; i < Math.min(data.codec_distribution.length, 5); i++) {
-                    const codec = data.codec_distribution[i];
-                    formatHtml += `<li>${codec.codec}: <strong>${codec.count}</strong></li>`;
+    try {
+        fetch('/api/stats')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                formatHtml += '</ul>';
-                document.getElementById('format-stats').innerHTML = formatHtml;
-            }
-        })
-        .catch(error => {
-            console.error('Fehler beim Laden der Statistiken:', error);
-            document.getElementById('collection-stats').innerHTML = '<div class="alert alert-danger">Fehler beim Laden der Statistiken</div>';
-        });
+                return response.json();
+            })
+            .then(data => {
+                try {
+                    if (!data) {
+                        showMessage('collection-stats', 'Keine Statistikdaten verfügbar');
+                        return;
+                    }
+                    
+                    // Sammlungsstatistiken anzeigen
+                    let statsHtml = `
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Animes:</span>
+                            <strong>${data.animes_count || 0}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Staffeln:</span>
+                            <strong>${data.seasons_count || 0}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Episoden:</span>
+                            <strong>${data.episodes_count || 0}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Dateigröße:</span>
+                            <strong>${data.total_size_formatted || 'Unbekannt'}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Länge:</span>
+                            <strong>${data.total_duration_formatted || 'Unbekannt'}</strong>
+                        </div>
+                    `;
+                    document.getElementById('collection-stats').innerHTML = statsHtml;
+                    
+                    // Format-Statistiken anzeigen (aus denselben Daten)
+                    if (data.codec_distribution && data.codec_distribution.length > 0) {
+                        let formatHtml = '<ul class="list-unstyled">';
+                        for (let i = 0; i < Math.min(data.codec_distribution.length, 5); i++) {
+                            const codec = data.codec_distribution[i];
+                            formatHtml += `<li>${codec.codec || 'Unbekannt'}: <strong>${codec.count || 0}</strong></li>`;
+                        }
+                        formatHtml += '</ul>';
+                        document.getElementById('format-stats').innerHTML = formatHtml;
+                    } else {
+                        showMessage('format-stats', 'Keine Codec-Daten verfügbar');
+                    }
+                } catch (error) {
+                    console.error('Fehler bei der Verarbeitung der Statistiken:', error);
+                    showError('collection-stats', 'Fehler bei der Datenverarbeitung');
+                    showError('format-stats', 'Fehler bei der Datenverarbeitung');
+                }
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden der Statistiken:', error);
+                showError('collection-stats', 'Fehler beim Laden der Daten');
+                showError('format-stats', 'Fehler beim Laden der Daten');
+            });
+    } catch (error) {
+        console.error('Fehler beim Ausführen des API-Aufrufs für Statistiken:', error);
+        showError('collection-stats', 'Fehler beim Laden der Daten');
+        showError('format-stats', 'Fehler beim Laden der Daten');
+    }
     
     // Top Animes laden
-    fetch('/api/stats/top_animes')
-        .then(response => response.json())
-        .then(data => {
-            let topHtml = '<ul class="list-group list-group-flush">';
-            for (const anime of data) {
-                topHtml += `
-                    <a href="/anime/${anime.id}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        ${anime.name}
-                        <span class="badge bg-primary rounded-pill">${anime.episode_count} Episoden</span>
-                    </a>
-                `;
-            }
-            topHtml += '</ul>';
-            document.getElementById('top-animes').innerHTML = topHtml;
-        })
-        .catch(error => {
-            console.error('Fehler beim Laden der Top-Animes:', error);
-            document.getElementById('top-animes').innerHTML = '<div class="alert alert-danger">Fehler beim Laden der Top-Animes</div>';
-        });
+    try {
+        fetch('/api/stats/top_animes')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                try {
+                    if (!data || !data.top_animes || !Array.isArray(data.top_animes)) {
+                        showMessage('top-animes', 'Keine Anime-Daten verfügbar');
+                        return;
+                    }
+                    
+                    if (data.top_animes.length === 0) {
+                        showMessage('top-animes', 'Keine Top-Animes verfügbar');
+                        return;
+                    }
+                    
+                    let topHtml = '<ul class="list-group list-group-flush">';
+                    for (const anime of data.top_animes) {
+                        if (!anime) continue;
+                        topHtml += `
+                        <a href="/anime/${anime.id || 0}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            ${anime.name || 'Unbenannter Anime'}
+                            <span class="badge bg-primary rounded-pill">${anime.episode_count || 0} Episoden</span>
+                        </a>
+                    `;
+                    }
+                    topHtml += '</ul>';
+                    document.getElementById('top-animes').innerHTML = topHtml;
+                } catch (error) {
+                    console.error('Fehler bei der Verarbeitung der Top-Animes:', error);
+                    showError('top-animes', 'Fehler bei der Datenverarbeitung');
+                }
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden der Top-Animes:', error);
+                showError('top-animes', 'Fehler beim Laden der Daten');
+            });
+    } catch (error) {
+        console.error('Fehler beim Ausführen des API-Aufrufs für Top-Animes:', error);
+        showError('top-animes', 'Fehler beim Laden der Daten');
+    }
     
     // Auflösungsdiagramm laden
-    fetch('/api/stats/resolution?chart=true')
-        .then(response => response.json())
-        .then(data => {
-            if (data.distribution) {
-                const labels = Object.keys(data.distribution);
-                const values = Object.values(data.distribution);
-                
-                const ctx = document.getElementById('resolutionChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: values,
-                            backgroundColor: [
-                                '#4CAF50', // 4K
-                                '#2196F3', // Full HD
-                                '#FFC107', // HD
-                                '#FF9800', // HD Ready
-                                '#9E9E9E', // SD
-                                '#F44336'  // Unbekannt
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    boxWidth: 12
+    try {
+        if (!checkAndCreateCanvas('resolution-chart-container', 'resolutionChart')) {
+            console.error('Chart-Container für Auflösungsdiagramm nicht gefunden');
+            return;
+        }
+        
+        fetch('/api/stats/resolution?chart=true')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                try {
+                    if (!data || !data.distribution) {
+                        showMessage('resolution-chart-container', 'Keine Auflösungsdaten verfügbar');
+                        return;
+                    }
+                    
+                    const labels = Object.keys(data.distribution);
+                    const values = Object.values(data.distribution);
+                    
+                    if (labels.length === 0 || values.length === 0) {
+                        showMessage('resolution-chart-container', 'Keine Auflösungsdaten verfügbar');
+                        return;
+                    }
+                    
+                    const ctx = document.getElementById('resolutionChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: [
+                                    '#4CAF50', // 4K
+                                    '#2196F3', // Full HD
+                                    '#FFC107', // HD
+                                    '#FF9800', // HD Ready
+                                    '#9E9E9E', // SD
+                                    '#F44336'  // Unbekannt
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        boxWidth: 12
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Fehler beim Laden des Auflösungsdiagramms:', error);
-        });
+                    });
+                } catch (error) {
+                    console.error('Fehler bei der Verarbeitung der Auflösungsdaten:', error);
+                    showError('resolution-chart-container', 'Fehler bei der Datenverarbeitung');
+                }
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden des Auflösungsdiagramms:', error);
+                showError('resolution-chart-container', 'Fehler beim Laden der Daten');
+            });
+    } catch (error) {
+        console.error('Fehler beim Ausführen des API-Aufrufs für Auflösungen:', error);
+        showError('resolution-chart-container', 'Fehler beim Laden der Daten');
+    }
     
     // HDR-Diagramm laden
-    fetch('/api/stats/hdr?chart=true')
-        .then(response => response.json())
-        .then(data => {
-            if (data.distribution) {
-                const labels = Object.keys(data.distribution);
-                const values = Object.values(data.distribution);
-                
-                const ctx = document.getElementById('hdrChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: values,
-                            backgroundColor: [
-                                '#E91E63', // HDR10
-                                '#9C27B0', // HDR10+
-                                '#673AB7', // Dolby Vision
-                                '#3F51B5', // HLG
-                                '#9E9E9E'  // Kein HDR
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    boxWidth: 12
+    try {
+        if (!checkAndCreateCanvas('hdr-chart-container', 'hdrChart')) {
+            console.error('Chart-Container für HDR-Diagramm nicht gefunden');
+            return;
+        }
+        
+        fetch('/api/stats/hdr?chart=true')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                try {
+                    if (!data || !data.distribution) {
+                        showMessage('hdr-chart-container', 'Keine HDR-Daten verfügbar');
+                        return;
+                    }
+                    
+                    const labels = Object.keys(data.distribution);
+                    const values = Object.values(data.distribution);
+                    
+                    if (labels.length === 0 || values.length === 0) {
+                        showMessage('hdr-chart-container', 'Keine HDR-Daten verfügbar');
+                        return;
+                    }
+                    
+                    const ctx = document.getElementById('hdrChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: [
+                                    '#E91E63', // HDR10
+                                    '#9C27B0', // HDR10+
+                                    '#673AB7', // Dolby Vision
+                                    '#3F51B5', // HLG
+                                    '#9E9E9E'  // Kein HDR
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        boxWidth: 12
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Fehler beim Laden des HDR-Diagramms:', error);
-        });
+                    });
+                } catch (error) {
+                    console.error('Fehler bei der Verarbeitung der HDR-Daten:', error);
+                    showError('hdr-chart-container', 'Fehler bei der Datenverarbeitung');
+                }
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden des HDR-Diagramms:', error);
+                showError('hdr-chart-container', 'Fehler beim Laden der Daten');
+            });
+    } catch (error) {
+        console.error('Fehler beim Ausführen des API-Aufrufs für HDR-Formate:', error);
+        showError('hdr-chart-container', 'Fehler beim Laden der Daten');
+    }
 });
 </script>
 {% endblock %}
