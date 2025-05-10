@@ -118,133 +118,242 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Hilfsfunktionen für Fehlerbehandlung
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            const parent = container.parentElement;
+            if (parent) {
+                parent.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            }
+        }
+    }
+    
+    function showMessage(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            const parent = container.parentElement;
+            if (parent) {
+                parent.innerHTML = `<div class="alert alert-info">${message}</div>`;
+            }
+        }
+    }
+    
+    // Prüfen, ob die Canvas-Elemente existieren
+    const resolutionChartElement = document.getElementById('episodeResolutionChart');
+    const codecChartElement = document.getElementById('episodeCodecChart');
+    
+    if (!resolutionChartElement || !codecChartElement) {
+        console.error('Chart-Elemente nicht gefunden');
+        return;
+    }
+    
     // Auflösungsverteilung laden
-    fetch('/api/filter?anime_id={{ anime.id }}&limit=1000')
-        .then(response => response.json())
-        .then(data => {
-            if (!data.episodes || data.episodes.length === 0) return;
-            
-            // Auflösungskategorien zählen
-            const resolutionCounts = {
-                "4K": 0,
-                "Full HD": 0,
-                "HD": 0,
-                "SD": 0,
-                "Unbekannt": 0
-            };
-            
-            data.episodes.forEach(episode => {
-                if (!episode.resolution_width || !episode.resolution_height) {
-                    resolutionCounts["Unbekannt"]++;
-                } else if (episode.resolution_width >= 3840) {
-                    resolutionCounts["4K"]++;
-                } else if (episode.resolution_width >= 1920) {
-                    resolutionCounts["Full HD"]++;
-                } else if (episode.resolution_width >= 1280) {
-                    resolutionCounts["HD"]++;
-                } else {
-                    resolutionCounts["SD"]++;
+    try {
+        fetch('/api/filter?anime_id={{ anime.id }}&limit=1000')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-            });
-            
-            // Auflösungsdiagramm erstellen
-            const resLabels = Object.keys(resolutionCounts).filter(key => resolutionCounts[key] > 0);
-            const resData = resLabels.map(key => resolutionCounts[key]);
-            
-            const resColors = [
-                '#4CAF50', // 4K
-                '#2196F3', // Full HD
-                '#FFC107', // HD
-                '#9E9E9E', // SD
-                '#F44336'  // Unbekannt
-            ];
-            
-            const resCtx = document.getElementById('episodeResolutionChart').getContext('2d');
-            new Chart(resCtx, {
-                type: 'pie',
-                data: {
-                    labels: resLabels,
-                    datasets: [{
-                        data: resData,
-                        backgroundColor: resColors.slice(0, resLabels.length),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Auflösungsverteilung'
-                        }
+                return response.json();
+            })
+            .then(data => {
+                try {
+                    // Prüfen, ob Episodendaten vorhanden sind
+                    if (!data || !data.episodes || data.episodes.length === 0) {
+                        showMessage('episodeResolutionChart', 'Keine Episodendaten verfügbar');
+                        showMessage('episodeCodecChart', 'Keine Episodendaten verfügbar');
+                        return;
                     }
-                }
-            });
-            
-            // Codec-Verteilung
-            const codecCounts = {};
-            
-            data.episodes.forEach(episode => {
-                const codec = episode.video_codec || 'Unbekannt';
-                codecCounts[codec] = (codecCounts[codec] || 0) + 1;
-            });
-            
-            // Nach Häufigkeit sortieren und auf Top 5 beschränken
-            const sortedCodecs = Object.entries(codecCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-            
-            const codecLabels = sortedCodecs.map(item => item[0]);
-            const codecData = sortedCodecs.map(item => item[1]);
-            
-            // Zufällige Farben für Codecs
-            const getRandomColors = (count) => {
-                const colors = [];
-                for (let i = 0; i < count; i++) {
-                    colors.push(`hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`);
-                }
-                return colors;
-            };
-            
-            const codecCtx = document.getElementById('episodeCodecChart').getContext('2d');
-            new Chart(codecCtx, {
-                type: 'bar',
-                data: {
-                    labels: codecLabels,
-                    datasets: [{
-                        label: 'Anzahl',
-                        data: codecData,
-                        backgroundColor: getRandomColors(codecLabels.length),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        title: {
-                            display: true,
-                            text: 'Codec-Verteilung'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
+                    
+                    // Auflösungsdiagramm erstellen
+                    try {
+                        createResolutionChart(data.episodes);
+                    } catch (resError) {
+                        console.error('Fehler beim Erstellen des Auflösungsdiagramms:', resError);
+                        showError('episodeResolutionChart', 'Fehler beim Erstellen des Diagramms');
                     }
+                    
+                    // Codec-Diagramm erstellen
+                    try {
+                        createCodecChart(data.episodes);
+                    } catch (codecError) {
+                        console.error('Fehler beim Erstellen des Codec-Diagramms:', codecError);
+                        showError('episodeCodecChart', 'Fehler beim Erstellen des Diagramms');
+                    }
+                } catch (dataProcessError) {
+                    console.error('Fehler bei der Datenverarbeitung:', dataProcessError);
+                    showError('episodeResolutionChart', 'Fehler bei der Datenverarbeitung');
+                    showError('episodeCodecChart', 'Fehler bei der Datenverarbeitung');
                 }
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden der Episodendaten:', error);
+                showError('episodeResolutionChart', 'Fehler beim Laden der Daten');
+                showError('episodeCodecChart', 'Fehler beim Laden der Daten');
             });
-        })
-        .catch(error => {
-            console.error('Fehler beim Laden der Episodendaten:', error);
+    } catch (fetchError) {
+        console.error('Fehler beim Ausführen des Fetch-Aufrufs:', fetchError);
+        showError('episodeResolutionChart', 'Fehler beim Laden der Daten');
+        showError('episodeCodecChart', 'Fehler beim Laden der Daten');
+    }
+    
+    // Funktion zum Erstellen des Auflösungsdiagramms
+    function createResolutionChart(episodes) {
+        if (!episodes || !Array.isArray(episodes) || episodes.length === 0) {
+            showMessage('episodeResolutionChart', 'Keine gültigen Episodendaten verfügbar');
+            return;
+        }
+        
+        // Auflösungskategorien zählen
+        const resolutionCounts = {
+            "4K": 0,
+            "Full HD": 0,
+            "HD": 0,
+            "SD": 0,
+            "Unbekannt": 0
+        };
+        
+        episodes.forEach(episode => {
+            if (!episode || !episode.resolution_width || !episode.resolution_height) {
+                resolutionCounts["Unbekannt"]++;
+            } else if (episode.resolution_width >= 3840) {
+                resolutionCounts["4K"]++;
+            } else if (episode.resolution_width >= 1920) {
+                resolutionCounts["Full HD"]++;
+            } else if (episode.resolution_width >= 1280) {
+                resolutionCounts["HD"]++;
+            } else {
+                resolutionCounts["SD"]++;
+            }
         });
+        
+        // Auflösungsdiagramm erstellen
+        const resLabels = Object.keys(resolutionCounts).filter(key => resolutionCounts[key] > 0);
+        
+        if (resLabels.length === 0) {
+            showMessage('episodeResolutionChart', 'Keine Auflösungsdaten verfügbar');
+            return;
+        }
+        
+        const resData = resLabels.map(key => resolutionCounts[key]);
+        
+        const resColors = [
+            '#4CAF50', // 4K
+            '#2196F3', // Full HD
+            '#FFC107', // HD
+            '#9E9E9E', // SD
+            '#F44336'  // Unbekannt
+        ];
+        
+        const resCtx = document.getElementById('episodeResolutionChart');
+        if (!resCtx) return;
+        
+        new Chart(resCtx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: resLabels,
+                datasets: [{
+                    data: resData,
+                    backgroundColor: resColors.slice(0, resLabels.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Auflösungsverteilung'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Funktion zum Erstellen des Codec-Diagramms
+    function createCodecChart(episodes) {
+        if (!episodes || !Array.isArray(episodes) || episodes.length === 0) {
+            showMessage('episodeCodecChart', 'Keine gültigen Episodendaten verfügbar');
+            return;
+        }
+        
+        // Codec-Verteilung
+        const codecCounts = {};
+        
+        episodes.forEach(episode => {
+            if (!episode) return;
+            const codec = episode.video_codec || 'Unbekannt';
+            codecCounts[codec] = (codecCounts[codec] || 0) + 1;
+        });
+        
+        if (Object.keys(codecCounts).length === 0) {
+            showMessage('episodeCodecChart', 'Keine Codec-Daten verfügbar');
+            return;
+        }
+        
+        // Nach Häufigkeit sortieren und auf Top 5 beschränken
+        const sortedCodecs = Object.entries(codecCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+        
+        if (sortedCodecs.length === 0) {
+            showMessage('episodeCodecChart', 'Keine Codec-Daten verfügbar');
+            return;
+        }
+        
+        const codecLabels = sortedCodecs.map(item => item[0]);
+        const codecData = sortedCodecs.map(item => item[1]);
+        
+        // Zufällige Farben für Codecs
+        const getRandomColors = (count) => {
+            if (!count || count <= 0) return [];
+            
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(`hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`);
+            }
+            return colors;
+        };
+        
+        const codecCtx = document.getElementById('episodeCodecChart');
+        if (!codecCtx) return;
+        
+        new Chart(codecCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: codecLabels,
+                datasets: [{
+                    label: 'Anzahl',
+                    data: codecData,
+                    backgroundColor: getRandomColors(codecLabels.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Codec-Verteilung'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
