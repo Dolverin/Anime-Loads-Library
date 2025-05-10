@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Suche - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Erweiterte Suche{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-search me-2"></i>Suchoptionen
+            </div>
+            <div class="card-body">
+                <form id="searchForm" action="{{ url_for('search') }}" method="GET">
+                    <div class="mb-3">
+                        <label for="searchInput" class="form-label">Suchbegriff</label>
+                        <input type="text" class="form-control" id="searchInput" name="q" value="{{ query }}" placeholder="Anime, Staffel oder Episode suchen..." required minlength="2">
+                    </div>
+                    <div class="mb-3">
+                        <label for="searchType" class="form-label">Suchen in</label>
+                        <select class="form-select" id="searchType" name="type">
+                            <option value="all" selected>Alles</option>
+                            <option value="anime">Nur Animes</option>
+                            <option value="season">Nur Staffeln</option>
+                            <option value="episode">Nur Episoden</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Suchen
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Suchtipps
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Du kannst nach Anime-Titeln, Staffelnamen oder Episodennamen suchen.</li>
+                    <li class="list-group-item">Die Suche berücksichtigt auch Dateipfade, falls du weißt, wo eine Datei gespeichert ist.</li>
+                    <li class="list-group-item">Für technische Details wie Codec oder Auflösung nutze die <a href="{{ url_for('filter_page') }}">Filterseite</a>.</li>
+                    <li class="list-group-item">Der Suchbegriff muss mindestens 2 Zeichen enthalten.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div id="searchResults" class="search-results-container">
+            {% if not query %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                    <h4 class="text-muted">Gib einen Suchbegriff ein, um die Suche zu starten</h4>
+                    <p class="text-muted">Durchsuche deine komplette Anime-Sammlung mit nur einem Klick</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Die Initialisierung des Suchformulars erfolgt in main.js
+    // Falls eine Suche von einer anderen Seite weitergeleitet wurde,
+    // wird die Suche automatisch ausgeführt.
+</script>
+{% endblock %}

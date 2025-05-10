@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Seite nicht gefunden - Anime-Loads Dashboard{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <div class="display-1 text-muted mb-3">404</div>
+    <h1 class="h3 mb-4">Seite nicht gefunden</h1>
+    <p class="lead text-muted mb-5">Die angeforderte Seite wurde leider nicht gefunden.</p>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Was möchtest du tun?</h5>
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Zur Startseite
+                        </a>
+                        <a href="{{ url_for('anime_list') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-list me-2"></i>Anime-Liste anzeigen
+                        </a>
+                        <a href="{{ url_for('search') }}" class="btn btn-outline-info">
+                            <i class="fas fa-search me-2"></i>Suche starten
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

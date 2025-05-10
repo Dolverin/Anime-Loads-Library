@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}{{ anime.name }} - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}{{ anime.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Startseite</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('anime_list') }}">Animes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ anime.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Anime-Informationen -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Anime-Informationen
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ anime.name }}</h5>
+                
+                <div class="mb-3">
+                    <p class="text-muted mb-1">
+                        <i class="fas fa-folder me-2"></i>{{ anime.directory_path }}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Staffeln:</span>
+                        <strong>{{ seasons|length }}</strong>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Episoden:</span>
+                        <strong>{{ total_episodes }}</strong>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('filter_page') }}?anime_id={{ anime.id }}" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Episoden filtern
+                    </a>
+                    <a href="{{ url_for('search') }}?q={{ anime.name }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-search me-2"></i>Suchen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staffel-Liste -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>Staffeln
+                </div>
+                <span class="badge bg-primary">{{ seasons|length }} Staffeln</span>
+            </div>
+            <div class="card-body p-0">
+                {% if seasons %}
+                    <div class="list-group list-group-flush">
+                        {% for season in seasons %}
+                            <a href="{{ url_for('season_detail', season_id=season.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">{{ season.name }}</h5>
+                                        <p class="mb-1 text-muted small">
+                                            <i class="fas fa-folder me-1"></i>{{ season.directory_path }}
+                                        </p>
+                                    </div>
+                                    <span class="badge bg-info rounded-pill">{{ season.episode_count }} Episoden</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info m-3">
+                        Keine Staffeln gefunden.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiken -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-2"></i>Statistiken
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-container" style="height: 300px; position: relative;">
+                            <canvas id="episodeResolutionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container" style="height: 300px; position: relative;">
+                            <canvas id="episodeCodecChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auflösungsverteilung laden
+    fetch('/api/filter?anime_id={{ anime.id }}&limit=1000')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.episodes || data.episodes.length === 0) return;
+            
+            // Auflösungskategorien zählen
+            const resolutionCounts = {
+                "4K": 0,
+                "Full HD": 0,
+                "HD": 0,
+                "SD": 0,
+                "Unbekannt": 0
+            };
+            
+            data.episodes.forEach(episode => {
+                if (!episode.resolution_width || !episode.resolution_height) {
+                    resolutionCounts["Unbekannt"]++;
+                } else if (episode.resolution_width >= 3840) {
+                    resolutionCounts["4K"]++;
+                } else if (episode.resolution_width >= 1920) {
+                    resolutionCounts["Full HD"]++;
+                } else if (episode.resolution_width >= 1280) {
+                    resolutionCounts["HD"]++;
+                } else {
+                    resolutionCounts["SD"]++;
+                }
+            });
+            
+            // Auflösungsdiagramm erstellen
+            const resLabels = Object.keys(resolutionCounts).filter(key => resolutionCounts[key] > 0);
+            const resData = resLabels.map(key => resolutionCounts[key]);
+            
+            const resColors = [
+                '#4CAF50', // 4K
+                '#2196F3', // Full HD
+                '#FFC107', // HD
+                '#9E9E9E', // SD
+                '#F44336'  // Unbekannt
+            ];
+            
+            const resCtx = document.getElementById('episodeResolutionChart').getContext('2d');
+            new Chart(resCtx, {
+                type: 'pie',
+                data: {
+                    labels: resLabels,
+                    datasets: [{
+                        data: resData,
+                        backgroundColor: resColors.slice(0, resLabels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Auflösungsverteilung'
+                        }
+                    }
+                }
+            });
+            
+            // Codec-Verteilung
+            const codecCounts = {};
+            
+            data.episodes.forEach(episode => {
+                const codec = episode.video_codec || 'Unbekannt';
+                codecCounts[codec] = (codecCounts[codec] || 0) + 1;
+            });
+            
+            // Nach Häufigkeit sortieren und auf Top 5 beschränken
+            const sortedCodecs = Object.entries(codecCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            const codecLabels = sortedCodecs.map(item => item[0]);
+            const codecData = sortedCodecs.map(item => item[1]);
+            
+            // Zufällige Farben für Codecs
+            const getRandomColors = (count) => {
+                const colors = [];
+                for (let i = 0; i < count; i++) {
+                    colors.push(`hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`);
+                }
+                return colors;
+            };
+            
+            const codecCtx = document.getElementById('episodeCodecChart').getContext('2d');
+            new Chart(codecCtx, {
+                type: 'bar',
+                data: {
+                    labels: codecLabels,
+                    datasets: [{
+                        label: 'Anzahl',
+                        data: codecData,
+                        backgroundColor: getRandomColors(codecLabels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Codec-Verteilung'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Episodendaten:', error);
+        });
+});
+</script>
+{% endblock %}

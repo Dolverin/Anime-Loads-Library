@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Filter - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Erweiterte Filterung{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-filter me-2"></i>Filteroptionen
+            </div>
+            <div class="card-body">
+                <form id="filterForm" action="{{ url_for('filter_page') }}" method="GET">
+                    <!-- Anime und Staffel Filter -->
+                    <div class="filter-section">
+                        <h6 class="filter-heading">Inhaltsfilter</h6>
+                        
+                        <div class="mb-3">
+                            <label for="animeSelect" class="form-label">Anime</label>
+                            <select class="form-select" id="animeSelect" name="anime_id">
+                                <option value="">Alle Animes</option>
+                                {% for anime in animes %}
+                                <option value="{{ anime.id }}">{{ anime.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="seasonSelect" class="form-label">Staffel</label>
+                            <select class="form-select" id="seasonSelect" name="season_id" disabled>
+                                <option value="">Alle Staffeln</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Videoqualität Filter -->
+                    <div class="filter-section">
+                        <h6 class="filter-heading">Videoqualität</h6>
+                        
+                        <div class="mb-3">
+                            <label for="resolutionSelect" class="form-label">Mindestauflösung</label>
+                            <select class="form-select" id="resolutionSelect" name="resolution_min">
+                                <option value="">Beliebig</option>
+                                <option value="3840">4K (3840×2160)</option>
+                                <option value="1920">Full HD (1920×1080)</option>
+                                <option value="1280">HD (1280×720)</option>
+                                <option value="720">HD Ready (720×576)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Qualitätskategorie</label>
+                            <div class="d-flex flex-wrap">
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="quality4k" name="quality[]" value="4k">
+                                    <label class="form-check-label" for="quality4k">
+                                        <span class="quality-badge quality-uhd">4K</span>
+                                    </label>
+                                </div>
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="qualityFhd" name="quality[]" value="fhd">
+                                    <label class="form-check-label" for="qualityFhd">
+                                        <span class="quality-badge quality-fhd">FHD</span>
+                                    </label>
+                                </div>
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="qualityHd" name="quality[]" value="hd">
+                                    <label class="form-check-label" for="qualityHd">
+                                        <span class="quality-badge quality-hd">HD</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Videocodecs</label>
+                            <div class="d-flex flex-wrap">
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="codecHevc" name="codec[]" value="HEVC">
+                                    <label class="form-check-label" for="codecHevc">
+                                        <span class="codec-badge codec-hevc">HEVC</span>
+                                    </label>
+                                </div>
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="codecAv1" name="codec[]" value="AV1">
+                                    <label class="form-check-label" for="codecAv1">
+                                        <span class="codec-badge codec-av1">AV1</span>
+                                    </label>
+                                </div>
+                                <div class="form-check me-3 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="codecH264" name="codec[]" value="AVC">
+                                    <label class="form-check-label" for="codecH264">
+                                        <span class="codec-badge codec-h264">H.264</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">HDR</label>
+                            <div class="d-flex">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" id="hdrAny" name="hdr" value="any">
+                                    <label class="form-check-label" for="hdrAny">
+                                        <span class="quality-badge hdr-badge">HDR</span> Nur HDR-Inhalte
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="hdrCheck" name="hdr" value="true">
+                            <label class="form-check-label" for="hdrCheck">Nur HDR-Inhalte</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Audio und Untertitel Filter -->
+                    <div class="filter-section">
+                        <h6 class="filter-heading">Audio und Untertitel</h6>
+                        
+                        <div class="mb-3">
+                            <label for="audioLanguageSelect" class="form-label">Audiosprache</label>
+                            <select class="form-select" id="audioLanguageSelect" name="audio_language">
+                                <option value="">Beliebig</option>
+                                <option value="jpn">Japanisch</option>
+                                <option value="ger">Deutsch</option>
+                                <option value="eng">Englisch</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="subtitlesCheck" name="subtitles" value="true">
+                            <label class="form-check-label" for="subtitlesCheck">Mit Untertiteln</label>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subtitleLanguageSelect" class="form-label">Untertitelsprache</label>
+                            <select class="form-select" id="subtitleLanguageSelect" name="subtitles_language">
+                                <option value="">Beliebig</option>
+                                <option value="ger">Deutsch</option>
+                                <option value="eng">Englisch</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex">
+                        <button type="submit" class="btn btn-primary flex-grow-1 me-2">
+                            <i class="fas fa-search me-2"></i>Filter anwenden
+                        </button>
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div id="filterResults" class="filter-results-container">
+            <div class="text-center py-5">
+                <i class="fas fa-filter fa-3x mb-3 text-muted"></i>
+                <h4 class="text-muted">Wähle Filteroptionen aus, um Ergebnisse anzuzeigen</h4>
+                <p class="text-muted">Finde genau die Episoden, die deinen Anforderungen entsprechen</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const filterResults = document.getElementById('filterResults');
+    
+    // Überprüfen, ob bereits Filter in der URL sind
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.toString()) {
+        // Parameter aus der URL in das Formular übertragen
+        for (const [key, value] of urlParams.entries()) {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = true;
+                } else {
+                    element.value = value;
+                }
+            }
+        }
+        
+        // Wenn ein Anime ausgewählt ist, Staffeln laden
+        const animeId = urlParams.get('anime_id');
+        if (animeId) {
+            fetchSeasons(animeId);
+            
+            // Staffel vorselektieren (wenn vorhanden)
+            const seasonId = urlParams.get('season_id');
+            if (seasonId) {
+                setTimeout(() => {
+                    const seasonSelect = document.getElementById('seasonSelect');
+                    if (seasonSelect && !seasonSelect.disabled) {
+                        seasonSelect.value = seasonId;
+                    }
+                }, 500); // Kurz warten, bis die Staffeln geladen sind
+            }
+        }
+        
+        // Ergebnisse laden
+        loadFilterResults(urlParams);
+    }
+    
+    // Formular abschicken und Ergebnisse ohne Seitenneuladung anzeigen
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(filterForm);
+        const searchParams = new URLSearchParams(formData);
+        
+        // URL ohne Seitenneuladung aktualisieren
+        const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+        window.history.pushState({}, '', newUrl);
+        
+        // Ergebnisse laden
+        loadFilterResults(searchParams);
+    });
+});
+
+/**
+ * Lädt Filterergebnisse via API
+ */
+function loadFilterResults(params) {
+    const filterResults = document.getElementById('filterResults');
+    
+    // Ladezustand anzeigen
+    filterResults.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Lade Ergebnisse...</span>
+            </div>
+            <p class="mt-2">Lade gefilterte Ergebnisse...</p>
+        </div>
+    `;
+    
+    // API-Anfrage für die Filterung
+    fetch(`/api/filter?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            displayFilterResults(data);
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Filterergebnisse:', error);
+            filterResults.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>Ein Fehler ist beim Laden der Ergebnisse aufgetreten. Bitte versuche es später erneut.
+                </div>
+            `;
+        });
+}
+
+/**
+ * Zeigt die gefilterten Ergebnisse an
+ */
+function displayFilterResults(data) {
+    const filterResults = document.getElementById('filterResults');
+    
+    if (!data.episodes || data.episodes.length === 0) {
+        filterResults.innerHTML = `
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>Keine Episoden gefunden, die den Filterkriterien entsprechen.
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>Filterergebnisse
+                </div>
+                <span class="badge bg-primary">${data.count} Episoden gefunden</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 custom-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Auflösung</th>
+                                <th>Codec</th>
+                                <th>HDR</th>
+                                <th>Audio</th>
+                                <th>Größe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+    `;
+    
+    data.episodes.forEach(episode => {
+        const resolutionText = episode.resolution_width && episode.resolution_height ? 
+            `${episode.resolution_width}×${episode.resolution_height}` : 'Unbekannt';
+        
+        const hdrText = episode.hdr_format ? episode.hdr_format : '-';
+        const audioText = episode.audio_language || '-';
+        
+        let sizeText = '-';
+        if (episode.file_size) {
+            const sizeInMB = episode.file_size / (1024 * 1024);
+            if (sizeInMB >= 1024) {
+                sizeText = `${(sizeInMB / 1024).toFixed(2)} GB`;
+            } else {
+                sizeText = `${sizeInMB.toFixed(2)} MB`;
+            }
+        }
+        
+        html += `
+            <tr>
+                <td>
+                    <a href="/episode/${episode.id}" class="text-decoration-none">
+                        ${episode.name}
+                    </a>
+                </td>
+                <td>${resolutionText}</td>
+                <td>${episode.video_codec || '-'}</td>
+                <td>${hdrText}</td>
+                <td>${audioText}</td>
+                <td>${sizeText}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    filterResults.innerHTML = html;
+}
+</script>
+{% endblock %}

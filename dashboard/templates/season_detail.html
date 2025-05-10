@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}{{ season.name }} - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}{{ season.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Startseite</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('anime_list') }}">Animes</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('anime_detail', anime_id=anime.id) }}">{{ anime.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ season.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Staffel-Informationen -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Staffel-Informationen
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ season.name }}</h5>
+                
+                <div class="mb-3">
+                    <p class="mb-1">
+                        <strong>Anime:</strong> 
+                        <a href="{{ url_for('anime_detail', anime_id=anime.id) }}">{{ anime.name }}</a>
+                    </p>
+                    <p class="text-muted mb-1">
+                        <i class="fas fa-folder me-2"></i>{{ season.directory_path }}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Episoden:</span>
+                        <strong>{{ episodes|length }}</strong>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('filter_page') }}?season_id={{ season.id }}" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Episoden filtern
+                    </a>
+                    <a href="{{ url_for('search') }}?q={{ season.name }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-search me-2"></i>Suchen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Episoden-Liste -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>Episoden
+                </div>
+                <span class="badge bg-primary">{{ episodes|length }} Episoden</span>
+            </div>
+            <div class="card-body p-0">
+                {% if episodes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Episode</th>
+                                    <th>Name</th>
+                                    <th>Auflösung</th>
+                                    <th>Codec</th>
+                                    <th>Größe</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for episode in episodes %}
+                                <tr>
+                                    <td>{{ episode.episode_number if episode.episode_number else '-' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('episode_detail', episode_id=episode.id) }}" class="text-decoration-none">
+                                            {{ episode.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if episode.resolution_width and episode.resolution_height %}
+                                            {{ episode.resolution_width }}×{{ episode.resolution_height }}
+                                            {% if episode.hdr_format %}
+                                                <span class="badge bg-warning text-dark ms-1" data-bs-toggle="tooltip" title="{{ episode.hdr_format }}">HDR</span>
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ episode.video_codec if episode.video_codec else '-' }}</td>
+                                    <td>
+                                        {% if episode.file_size %}
+                                            {% if episode.file_size >= 1073741824 %}
+                                                {{ (episode.file_size / 1073741824)|round(2) }} GB
+                                            {% else %}
+                                                {{ (episode.file_size / 1048576)|round(2) }} MB
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('episode_detail', episode_id=episode.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info m-3">
+                        Keine Episoden gefunden.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiken -->
+<div class="row mt-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2"></i>Auflösungsverteilung
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px; position: relative;">
+                    <canvas id="resolutionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-film me-2"></i>Videocodec-Verteilung
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px; position: relative;">
+                    <canvas id="codecChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltips initialisieren
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Auflösungsdiagramm
+    const episodeData = {{ episodes|tojson }};
+    const episodes = episodeData.map(ep => [ep.resolution_width, ep.resolution_height]);
+    
+    const resolutionCounts = {
+        "4K": 0,
+        "Full HD": 0,
+        "HD": 0,
+        "SD": 0,
+        "Unbekannt": 0
+    };
+    
+    episodes.forEach(ep => {
+        if (!ep[0] || !ep[1]) {
+            resolutionCounts["Unbekannt"]++;
+        } else if (ep[0] >= 3840) {
+            resolutionCounts["4K"]++;
+        } else if (ep[0] >= 1920) {
+            resolutionCounts["Full HD"]++;
+        } else if (ep[0] >= 1280) {
+            resolutionCounts["HD"]++;
+        } else {
+            resolutionCounts["SD"]++;
+        }
+    });
+    
+    // Leere Kategorien entfernen
+    for (const key in resolutionCounts) {
+        if (resolutionCounts[key] === 0) {
+            delete resolutionCounts[key];
+        }
+    }
+    
+    const resLabels = Object.keys(resolutionCounts);
+    const resData = Object.values(resolutionCounts);
+    
+    const resColors = [
+        '#4CAF50', // 4K
+        '#2196F3', // Full HD
+        '#FFC107', // HD
+        '#9E9E9E', // SD
+        '#F44336'  // Unbekannt
+    ];
+    
+    const resCtx = document.getElementById('resolutionChart').getContext('2d');
+    new Chart(resCtx, {
+        type: 'pie',
+        data: {
+            labels: resLabels,
+            datasets: [{
+                data: resData,
+                backgroundColor: resColors.slice(0, resLabels.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    
+    // Codec-Diagramm
+    // Verwende die bereits geladenen Episodendaten
+    const episodeCodecs = episodeData.map(ep => ep.video_codec);
+    
+    const codecCounts = {};
+    episodeCodecs.forEach(codec => {
+        const codecName = codec || 'Unbekannt';
+        codecCounts[codecName] = (codecCounts[codecName] || 0) + 1;
+    });
+    
+    const codecLabels = Object.keys(codecCounts);
+    const codecData = Object.values(codecCounts);
+    
+    // Zufällige Farben für Codecs
+    const getRandomColors = (count) => {
+        const colors = [];
+        const baseColors = [
+            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', 
+            '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad'
+        ];
+        
+        for (let i = 0; i < count; i++) {
+            colors.push(baseColors[i % baseColors.length]);
+        }
+        return colors;
+    };
+    
+    const codecCtx = document.getElementById('codecChart').getContext('2d');
+    new Chart(codecCtx, {
+        type: 'bar',
+        data: {
+            labels: codecLabels,
+            datasets: [{
+                label: 'Anzahl',
+                data: codecData,
+                backgroundColor: getRandomColors(codecLabels.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

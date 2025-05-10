@@ -1,0 +1,188 @@
+/* Erweiterte Styling für Metadaten und visuelle Elemente */
+
+/* Qualitätsanzeige Badges */
+.quality-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.quality-uhd {
+    background-color: #6a0dad;
+}
+
+.quality-fhd {
+    background-color: #2e5cb8;
+}
+
+.quality-hd {
+    background-color: #17a2b8;
+}
+
+.quality-sd {
+    background-color: #6c757d;
+}
+
+/* HDR Badge */
+.hdr-badge {
+    background-color: #e6a919;
+    color: #000;
+}
+
+/* Codec Badges */
+.codec-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.codec-hevc {
+    background-color: #5cb85c;
+    color: white;
+}
+
+.codec-av1 {
+    background-color: #d9534f;
+    color: white;
+}
+
+.codec-h264 {
+    background-color: #5bc0de;
+    color: white;
+}
+
+/* Metadaten-Karten */
+.metadata-card {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    margin-bottom: 1.5rem;
+}
+
+.metadata-card:hover {
+    transform: translateY(-5px);
+}
+
+.metadata-card .card-header {
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+}
+
+/* Fortschrittsbalken für Bitraten */
+.bitrate-bar {
+    height: 12px;
+    border-radius: 6px;
+    margin-top: 5px;
+    background-color: #e9ecef;
+}
+
+.bitrate-value {
+    height: 100%;
+    border-radius: 6px;
+    background-color: #4e73df;
+}
+
+/* Audio und Untertitel Indikatoren */
+.language-tag {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+}
+
+/* Tooltip für zusätzliche Informationen */
+.info-tooltip {
+    cursor: help;
+    color: #6c757d;
+}
+
+/* Medien-Pfad mit Ellipsis */
+.file-path {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Dark Mode Anpassungen */
+.dark-mode .quality-badge {
+    filter: brightness(0.85);
+}
+
+.dark-mode .codec-badge {
+    filter: brightness(0.85);
+}
+
+.dark-mode .language-tag {
+    background-color: #444;
+    color: #eee;
+}
+
+.dark-mode .bitrate-bar {
+    background-color: #333;
+}
+
+.dark-mode .metadata-card {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+/* Metadaten Wert Styling */
+.metadata-value {
+    font-weight: normal;
+    color: #444;
+}
+
+.dark-mode .metadata-value {
+    color: #ccc;
+}
+
+/* Grafische Elemente für Statistiken */
+.stat-icon {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+/* Filter-Elemente */
+.filter-chip {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: #f0f0f0;
+    border-radius: 16px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filter-chip:hover {
+    background-color: #e0e0e0;
+}
+
+.filter-chip.active {
+    background-color: #4e73df;
+    color: white;
+}
+
+.dark-mode .filter-chip {
+    background-color: #333;
+}
+
+.dark-mode .filter-chip:hover {
+    background-color: #444;
+}
+
+.dark-mode .filter-chip.active {
+    background-color: #4e73df;
+}

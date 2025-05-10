@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Anime-Liste - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Meine Anime-Sammlung{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-list me-2"></i>Alle Animes
+        </div>
+        <span class="badge bg-primary">{{ animes|length }} Animes</span>
+    </div>
+    <div class="card-body p-0">
+        {% if animes %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 custom-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Staffeln</th>
+                            <th>Episoden</th>
+                            <th>Pfad</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for anime in animes %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('anime_detail', anime_id=anime.id) }}" class="text-decoration-none fw-bold">
+                                    {{ anime.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ anime.season_count }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ anime.episode_count }}</span>
+                            </td>
+                            <td class="text-muted small">
+                                <i class="fas fa-folder me-1"></i>{{ anime.directory_path }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('anime_detail', anime_id=anime.id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <a href="{{ url_for('filter_page') }}?anime_id={{ anime.id }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-filter"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info m-3">
+                Keine Animes gefunden.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Informationen
+            </div>
+            <div class="card-body">
+                <p>
+                    Diese Seite zeigt eine Übersicht aller verfügbaren Animes in deiner Sammlung.
+                    Für detaillierte Informationen zu einem bestimmten Anime klicke auf dessen Namen.
+                </p>
+                <p>
+                    Zum Filtern von Episoden nach bestimmten Kriterien (z.B. Auflösung, Codec, HDR),
+                    nutze den Filter-Button oder die <a href="{{ url_for('filter_page') }}">Filterseite</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-search me-2"></i>Schnellsuche
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('search') }}" method="get">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Anime suchen...">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i> Suchen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

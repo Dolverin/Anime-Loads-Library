@@ -1,0 +1,282 @@
+{% extends "simple_base.html" %}
+
+{% block title %}Anime-Loads Dashboard - Suche{% endblock %}
+
+{% block header %}Anime-Suche{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card dashboard-card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-search me-2"></i>Suchparameter
+            </div>
+            <div class="card-body">
+                <form id="search-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label for="search-term">Suchbegriff</label>
+                                <input type="text" class="form-control" id="search-term" name="q" 
+                                       value="{{ query }}" placeholder="Suchbegriff eingeben..." required>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-group">
+                                <label for="search-type">Suche in</label>
+                                <select class="form-select" id="search-type" name="type">
+                                    <option value="all" selected>Alle</option>
+                                    <option value="anime">Nur Animes</option>
+                                    <option value="season">Nur Staffeln</option>
+                                    <option value="episode">Nur Episoden</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-group">
+                                <label for="limit">Maximale Ergebnisse</label>
+                                <select class="form-select" id="limit" name="limit">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Suchen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <ul class="nav nav-tabs" id="search-results-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="animes-tab" data-bs-toggle="tab" data-bs-target="#animes" 
+                        type="button" role="tab" aria-controls="animes" aria-selected="true">
+                    Animes <span class="badge bg-secondary" id="animes-count">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="seasons-tab" data-bs-toggle="tab" data-bs-target="#seasons" 
+                        type="button" role="tab" aria-controls="seasons" aria-selected="false">
+                    Staffeln <span class="badge bg-secondary" id="seasons-count">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" 
+                        type="button" role="tab" aria-controls="episodes" aria-selected="false">
+                    Episoden <span class="badge bg-secondary" id="episodes-count">0</span>
+                </button>
+            </li>
+        </ul>
+        <div class="tab-content" id="search-results-content">
+            <div class="tab-pane fade show active" id="animes" role="tabpanel" aria-labelledby="animes-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover custom-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Pfad</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="animes-results">
+                            <tr>
+                                <td colspan="3" class="text-center">Führe eine Suche durch, um Ergebnisse zu sehen</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="seasons" role="tabpanel" aria-labelledby="seasons-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover custom-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Staffel</th>
+                                <th>Pfad</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seasons-results">
+                            <tr>
+                                <td colspan="4" class="text-center">Führe eine Suche durch, um Ergebnisse zu sehen</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover custom-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Größe</th>
+                                <th>Auflösung</th>
+                                <th>Codec</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="episodes-results">
+                            <tr>
+                                <td colspan="5" class="text-center">Führe eine Suche durch, um Ergebnisse zu sehen</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Suche ausführen, wenn bereits ein Suchbegriff vorhanden ist
+    const searchForm = document.getElementById('search-form');
+    const searchTermInput = document.getElementById('search-term');
+    
+    if (searchTermInput.value.trim() !== '') {
+        performSearch(searchTermInput.value);
+    }
+    
+    // Event-Listener für das Suchformular
+    searchForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const searchTerm = searchTermInput.value.trim();
+        if (searchTerm === '') {
+            alert('Bitte gib einen Suchbegriff ein.');
+            return;
+        }
+        
+        performSearch(searchTerm);
+    });
+    
+    // Suchfunktion
+    function performSearch(searchTerm) {
+        const searchType = document.getElementById('search-type').value;
+        const limit = document.getElementById('limit').value;
+        
+        // Tabelleninhalte zurücksetzen
+        document.getElementById('animes-results').innerHTML = '<tr><td colspan="3" class="text-center">Suche läuft...</td></tr>';
+        document.getElementById('seasons-results').innerHTML = '<tr><td colspan="4" class="text-center">Suche läuft...</td></tr>';
+        document.getElementById('episodes-results').innerHTML = '<tr><td colspan="5" class="text-center">Suche läuft...</td></tr>';
+        
+        // API-Anfrage
+        fetch(`/api/search?q=${encodeURIComponent(searchTerm)}&type=${searchType}&limit=${limit}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Netzwerkantwort war nicht ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Zähler aktualisieren
+                document.getElementById('animes-count').textContent = data.animes ? data.animes.length : 0;
+                document.getElementById('seasons-count').textContent = data.seasons ? data.seasons.length : 0;
+                document.getElementById('episodes-count').textContent = data.episodes ? data.episodes.length : 0;
+                
+                // Anime-Ergebnisse
+                const animesTable = document.getElementById('animes-results');
+                if (data.animes && data.animes.length > 0) {
+                    animesTable.innerHTML = '';
+                    data.animes.forEach(anime => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${anime.name}</td>
+                            <td>${anime.directory_path}</td>
+                            <td>
+                                <a href="/anime/${anime.id}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        `;
+                        animesTable.appendChild(row);
+                    });
+                } else {
+                    animesTable.innerHTML = '<tr><td colspan="3" class="text-center">Keine Anime-Ergebnisse gefunden</td></tr>';
+                }
+                
+                // Staffel-Ergebnisse
+                const seasonsTable = document.getElementById('seasons-results');
+                if (data.seasons && data.seasons.length > 0) {
+                    seasonsTable.innerHTML = '';
+                    data.seasons.forEach(season => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${season.name}</td>
+                            <td>${season.season_number || 'N/A'}</td>
+                            <td>${season.directory_path}</td>
+                            <td>
+                                <a href="/season/${season.id}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="/anime/${season.anime_id}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-tv"></i>
+                                </a>
+                            </td>
+                        `;
+                        seasonsTable.appendChild(row);
+                    });
+                } else {
+                    seasonsTable.innerHTML = '<tr><td colspan="4" class="text-center">Keine Staffel-Ergebnisse gefunden</td></tr>';
+                }
+                
+                // Episoden-Ergebnisse
+                const episodesTable = document.getElementById('episodes-results');
+                if (data.episodes && data.episodes.length > 0) {
+                    episodesTable.innerHTML = '';
+                    data.episodes.forEach(episode => {
+                        const formatSize = (size) => {
+                            if (!size) return 'N/A';
+                            if (size < 1024*1024) return `${(size/1024).toFixed(2)} KB`;
+                            if (size < 1024*1024*1024) return `${(size/1024/1024).toFixed(2)} MB`;
+                            return `${(size/1024/1024/1024).toFixed(2)} GB`;
+                        };
+                        
+                        const formatResolution = (width, height) => {
+                            if (!width || !height) return 'N/A';
+                            return `${width}x${height}`;
+                        };
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${episode.name}</td>
+                            <td>${formatSize(episode.file_size)}</td>
+                            <td>${formatResolution(episode.resolution_width, episode.resolution_height)}</td>
+                            <td>${episode.video_codec || 'N/A'}</td>
+                            <td>
+                                <a href="/episode/${episode.id}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="/season/${episode.season_id}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-list"></i>
+                                </a>
+                            </td>
+                        `;
+                        episodesTable.appendChild(row);
+                    });
+                } else {
+                    episodesTable.innerHTML = '<tr><td colspan="5" class="text-center">Keine Episoden-Ergebnisse gefunden</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Fehler bei der Suche:', error);
+                document.getElementById('animes-results').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Fehler bei der Suche</td></tr>';
+                document.getElementById('seasons-results').innerHTML = '<tr><td colspan="4" class="text-center text-danger">Fehler bei der Suche</td></tr>';
+                document.getElementById('episodes-results').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Fehler bei der Suche</td></tr>';
+            });
+    }
+});
+</script>
+{% endblock %}

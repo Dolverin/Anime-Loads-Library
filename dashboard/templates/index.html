@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Startseite - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Willkommen im Anime-Loads Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Dashboard-Kacheln -->
+    <div class="col-md-8">
+        <div class="row">
+            <!-- Anime-Sammlung Übersicht -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-tv me-2"></i>Meine Anime-Sammlung
+                        </h5>
+                        <div class="dashboard-stats" id="collection-stats">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Laden...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('anime_list') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-list me-1"></i>Alle Animes anzeigen
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Videoformate Übersicht -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-film me-2"></i>Videoformate
+                        </h5>
+                        <div class="dashboard-stats" id="format-stats">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Laden...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('stats') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-chart-bar me-1"></i>Detaillierte Statistiken
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Auflösungen Übersicht -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-expand me-2"></i>Auflösungen
+                        </h5>
+                        <div id="resolution-chart-container" style="height: 200px;">
+                            <canvas id="resolutionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('filter_page') }}?resolution_min=3840" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-filter me-1"></i>4K Inhalte anzeigen
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HDR-Formate Übersicht -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-sun me-2"></i>HDR-Formate
+                        </h5>
+                        <div id="hdr-chart-container" style="height: 200px;">
+                            <canvas id="hdrChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('filter_page') }}?hdr=true" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-filter me-1"></i>HDR Inhalte anzeigen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Seitenleiste -->
+    <div class="col-md-4">
+        <!-- Schnellzugriff -->
+        <div class="card mb-4 dashboard-card">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2"></i>Schnellzugriff
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('search') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-search me-2"></i>Erweiterte Suche
+                </a>
+                <a href="{{ url_for('filter_page') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-filter me-2"></i>Filter anwenden
+                </a>
+                <a href="{{ url_for('stats') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chart-bar me-2"></i>Statistiken anzeigen
+                </a>
+                <a href="{{ url_for('update_metadata') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-sync me-2"></i>Metadaten aktualisieren
+                </a>
+                <a href="{{ url_for('export') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-file-export me-2"></i>Daten exportieren
+                </a>
+            </div>
+        </div>
+        
+        <!-- Top-Animes -->
+        <div class="card mb-4 dashboard-card">
+            <div class="card-header">
+                <i class="fas fa-trophy me-2"></i>Top Animes
+            </div>
+            <div class="card-body p-0">
+                <div id="top-animes">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Laden...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hinweise/Tipps -->
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Tipps & Tricks
+            </div>
+            <div class="card-body">
+                <div class="tip-carousel">
+                    <div id="tipCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <p><strong>Suchen:</strong> Nutze die erweiterte Suche, um nach spezifischen Merkmalen wie Codec oder Auflösung zu filtern.</p>
+                            </div>
+                            <div class="carousel-item">
+                                <p><strong>Filterung:</strong> Kombiniere mehrere Filter, um genau die Inhalte zu finden, die du suchst.</p>
+                            </div>
+                            <div class="carousel-item">
+                                <p><strong>Metadaten:</strong> Aktualisiere regelmäßig deine Metadaten, um alle Informationen auf dem neuesten Stand zu halten.</p>
+                            </div>
+                            <div class="carousel-item">
+                                <p><strong>Export:</strong> Exportiere die Metadaten als HTML, um sie offline durchsuchen zu können.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sammlungsstatistiken laden
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            let statsHtml = `
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Animes:</span>
+                    <strong>${data.animes_count}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Staffeln:</span>
+                    <strong>${data.seasons_count}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Episoden:</span>
+                    <strong>${data.episodes_count}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Gesamtgröße:</span>
+                    <strong>${data.total_size_formatted}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Gesamtdauer:</span>
+                    <strong>${data.total_duration_formatted}</strong>
+                </div>
+            `;
+            document.getElementById('collection-stats').innerHTML = statsHtml;
+            
+            // Format-Statistiken
+            if (data.codec_distribution && data.codec_distribution.length > 0) {
+                let formatHtml = '<ul class="list-unstyled">';
+                for (let i = 0; i < Math.min(data.codec_distribution.length, 5); i++) {
+                    const codec = data.codec_distribution[i];
+                    formatHtml += `<li>${codec.codec}: <strong>${codec.count}</strong></li>`;
+                }
+                formatHtml += '</ul>';
+                document.getElementById('format-stats').innerHTML = formatHtml;
+            }
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Statistiken:', error);
+            document.getElementById('collection-stats').innerHTML = '<div class="alert alert-danger">Fehler beim Laden der Statistiken</div>';
+        });
+    
+    // Top Animes laden
+    fetch('/api/stats/top_animes')
+        .then(response => response.json())
+        .then(data => {
+            let topHtml = '<ul class="list-group list-group-flush">';
+            for (const anime of data) {
+                topHtml += `
+                    <a href="/anime/${anime.id}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        ${anime.name}
+                        <span class="badge bg-primary rounded-pill">${anime.episode_count} Episoden</span>
+                    </a>
+                `;
+            }
+            topHtml += '</ul>';
+            document.getElementById('top-animes').innerHTML = topHtml;
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Top-Animes:', error);
+            document.getElementById('top-animes').innerHTML = '<div class="alert alert-danger">Fehler beim Laden der Top-Animes</div>';
+        });
+    
+    // Auflösungsdiagramm laden
+    fetch('/api/stats/resolution?chart=true')
+        .then(response => response.json())
+        .then(data => {
+            if (data.distribution) {
+                const labels = Object.keys(data.distribution);
+                const values = Object.values(data.distribution);
+                
+                const ctx = document.getElementById('resolutionChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: [
+                                '#4CAF50', // 4K
+                                '#2196F3', // Full HD
+                                '#FFC107', // HD
+                                '#FF9800', // HD Ready
+                                '#9E9E9E', // SD
+                                '#F44336'  // Unbekannt
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 12
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden des Auflösungsdiagramms:', error);
+        });
+    
+    // HDR-Diagramm laden
+    fetch('/api/stats/hdr?chart=true')
+        .then(response => response.json())
+        .then(data => {
+            if (data.distribution) {
+                const labels = Object.keys(data.distribution);
+                const values = Object.values(data.distribution);
+                
+                const ctx = document.getElementById('hdrChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: [
+                                '#E91E63', // HDR10
+                                '#9C27B0', // HDR10+
+                                '#673AB7', // Dolby Vision
+                                '#3F51B5', // HLG
+                                '#9E9E9E'  // Kein HDR
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 12
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden des HDR-Diagramms:', error);
+        });
+});
+</script>
+{% endblock %}

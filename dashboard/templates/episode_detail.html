@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}{{ episode.name }} - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}{{ episode.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Startseite</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('anime_list') }}">Animes</a></li>
+        {% if anime %}
+        <li class="breadcrumb-item"><a href="{{ url_for('anime_detail', anime_id=anime.id) }}">{{ anime.name }}</a></li>
+        {% endif %}
+        {% if season %}
+        <li class="breadcrumb-item"><a href="{{ url_for('season_detail', season_id=season.id) }}">{{ season.name }}</a></li>
+        {% endif %}
+        <li class="breadcrumb-item active" aria-current="page">{{ episode.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Haupt-Metadaten -->
+    <div class="col-lg-8">
+        <div class="card mb-4 metadata-card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Technische Details
+            </div>
+            <div class="card-body">
+                <h4 class="card-title mb-4">{{ episode.name }}</h4>
+                
+                <div class="media-info">
+                    <h5><i class="fas fa-file-video me-2"></i>Dateiinformationen</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Dateipfad:</span>
+                                <span class="file-path" title="{{ episode.file_path }}">{{ episode.file_path }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Dateigröße:</span>
+                                <span>
+                                    {% if episode.file_size %}
+                                        {% if episode.file_size >= 1073741824 %}
+                                            {{ (episode.file_size / 1073741824)|round(2) }} GB
+                                        {% else %}
+                                            {{ (episode.file_size / 1048576)|round(2) }} MB
+                                        {% endif %}
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Dateiendung:</span>
+                                <span>{{ episode.file_extension }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Container:</span>
+                                <span>{{ episode.container_format if episode.container_format else 'Unbekannt' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Laufzeit:</span>
+                                <span>
+                                    {% if episode.duration_ms %}
+                                        {% set seconds = (episode.duration_ms / 1000)|int %}
+                                        {% set hours = (seconds / 3600)|int %}
+                                        {% set minutes = ((seconds % 3600) / 60)|int %}
+                                        {% set secs = seconds % 60 %}
+                                        
+                                        {% if hours > 0 %}
+                                            {{ hours }}h {{ minutes }}m {{ secs }}s
+                                        {% else %}
+                                            {{ minutes }}m {{ secs }}s
+                                        {% endif %}
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Episode:</span>
+                                <span>{{ episode.episode_number if episode.episode_number else 'Unbekannt' }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Staffel:</span>
+                                <span>
+                                    {% if season %}
+                                        <a href="{{ url_for('season_detail', season_id=season.id) }}">{{ season.name }}</a>
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Anime:</span>
+                                <span>
+                                    {% if anime %}
+                                        <a href="{{ url_for('anime_detail', anime_id=anime.id) }}">{{ anime.name }}</a>
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="media-info">
+                    <h5><i class="fas fa-film me-2"></i>Videoinformationen</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Codec:</span>
+                                <span>
+                                    {{ episode.video_codec if episode.video_codec else 'Unbekannt' }}
+                                    {% if episode.video_codec %}
+                                        {% if 'HEVC' in episode.video_codec or 'x265' in episode.video_codec %}
+                                            <span class="codec-badge codec-hevc">HEVC</span>
+                                        {% elif 'AV1' in episode.video_codec %}
+                                            <span class="codec-badge codec-av1">AV1</span>
+                                        {% elif 'AVC' in episode.video_codec or 'x264' in episode.video_codec or 'H.264' in episode.video_codec %}
+                                            <span class="codec-badge codec-h264">H.264</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Auflösung:</span>
+                                <span>
+                                    {% if episode.resolution_width and episode.resolution_height %}
+                                        {{ episode.resolution_width }}×{{ episode.resolution_height }}
+                                        {% if episode.resolution_width >= 3840 %}
+                                            <span class="quality-badge quality-uhd">4K</span>
+                                        {% elif episode.resolution_width >= 1920 %}
+                                            <span class="quality-badge quality-fhd">FHD</span>
+                                        {% elif episode.resolution_width >= 1280 %}
+                                            <span class="quality-badge quality-hd">HD</span>
+                                        {% else %}
+                                            <span class="quality-badge quality-sd">SD</span>
+                                        {% endif %}
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Bildrate:</span>
+                                <span>
+                                    {% if episode.framerate %}
+                                        {{ episode.framerate }} fps
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Videobitrate:</span>
+                                <span>
+                                    {% if episode.video_bitrate %}
+                                        {% if episode.video_bitrate >= 1000000 %}
+                                            {{ (episode.video_bitrate / 1000000)|round(2) }} Mbps
+                                            <div class="bitrate-bar" style="width: 180px;">
+                                                {% set percentage = (episode.video_bitrate / 20000000 * 100)|round|int %}
+                                                {% set percentage = percentage if percentage <= 100 else 100 %}
+                                                <div class="bitrate-value" style="width: {{ percentage }}%;"></div>
+                                            </div>
+                                        {% else %}
+                                            {{ (episode.video_bitrate / 1000)|round(2) }} Kbps
+                                            <div class="bitrate-bar" style="width: 180px;">
+                                                {% set percentage = (episode.video_bitrate / 1000000 * 100)|round|int %}
+                                                {% set percentage = percentage if percentage <= 100 else 100 %}
+                                                <div class="bitrate-value" style="width: {{ percentage }}%;"></div>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Seitenverhältnis:</span>
+                                <span>{{ episode.aspect_ratio if episode.aspect_ratio else 'Unbekannt' }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">HDR-Format:</span>
+                                <span>
+                                    {{ episode.hdr_format if episode.hdr_format else 'Kein HDR' }}
+                                    {% if episode.hdr_format %}
+                                        <span class="quality-badge hdr-badge">HDR</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Farbraum:</span>
+                                <span>{{ episode.color_space if episode.color_space else 'Unbekannt' }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Scan-Typ:</span>
+                                <span>{{ episode.scan_type if episode.scan_type else 'Unbekannt' }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Encoder:</span>
+                                <span>{{ episode.encoder if episode.encoder else 'Unbekannt' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="media-info">
+                    <h5><i class="fas fa-volume-up me-2"></i>Audioinformationen</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Hauptsprache:</span>
+                                <span>{{ episode.audio_language if episode.audio_language else 'Unbekannt' }}</span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Anzahl Tonspuren:</span>
+                                <span>{{ episode.audio_tracks_count if episode.audio_tracks_count else 'Unbekannt' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Verfügbare Sprachen:</span>
+                                <span>
+                                    {% if episode.audio_languages %}
+                                        {% for language in episode.audio_languages.split(',') %}
+                                            <span class="language-tag">{{ language.strip() }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        Unbekannt
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="media-info">
+                    <h5><i class="fas fa-closed-captioning me-2"></i>Untertitelinformationen</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Untertitelformate:</span>
+                                <span>
+                                    {% if episode.subtitles_formats %}
+                                        {% for format in episode.subtitles_formats.split(',') %}
+                                            <span class="language-tag">{{ format.strip() }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        Keine
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="media-info-row">
+                                <span class="media-info-label">Anzahl Untertitel:</span>
+                                <span>{{ episode.subtitles_count if episode.subtitles_count else '0' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="media-info-row">
+                                <span class="media-info-label">Erzwungene Untertitel:</span>
+                                <span>
+                                    {% if episode.forced_subtitles == 1 %}
+                                        Ja
+                                    {% else %}
+                                        Nein
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4 metadata-card">
+            <div class="card-header">
+                <i class="fas fa-cogs me-2"></i>Aktionen
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('filter_page') }}?season_id={{ episode.season_id }}" class="btn btn-outline-primary">
+                        <i class="fas fa-filter me-2"></i>Ähnliche Episoden finden
+                    </a>
+                    
+                    {% if episode.hdr_format %}
+                        <a href="{{ url_for('filter_page') }}?hdr=true" class="btn btn-outline-warning">
+                            <i class="fas fa-sun me-2"></i>Weitere HDR-Inhalte finden
+                        </a>
+                    {% endif %}
+                    
+                    {% if episode.resolution_width and episode.resolution_width >= 3840 %}
+                        <a href="{{ url_for('filter_page') }}?resolution_min=3840" class="btn btn-outline-success">
+                            <i class="fas fa-expand me-2"></i>Weitere 4K-Inhalte finden
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltips initialisieren
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
