@@ -175,7 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Episodendaten sicher initialisieren
         let episodeData = [];
         try {
-            episodeData = {{ episodes|tojson }} || [];
+            // Sicheres Parsen der Episodendaten
+            const rawData = '{{ episodes|tojson|safe }}';
+            episodeData = rawData ? JSON.parse(rawData) : [];
         } catch (dataError) {
             console.error('Fehler beim Laden der Episodendaten:', dataError);
             showError('resolutionChart', 'Fehler beim Laden der Episodendaten');
