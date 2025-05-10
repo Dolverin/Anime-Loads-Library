@@ -79,7 +79,7 @@ def search():
         
         results['episodes'] = [episode.to_dict() for episode in episodes]
     
-    return jsonify(results)
+    return jsonify({'results': results})
 
 def get_anime(anime_id):
     """
@@ -259,5 +259,6 @@ def filter_episodes():
     
     return jsonify({
         'count': len(results),
-        'episodes': results
+        'episodes': results,
+        'filters': {}  # Platzhalter, kann bei Bedarf mit echten Filterwerten gefüllt werden
     })

@@ -235,4 +235,4 @@ def get_top_animes():
                 'episode_count': episode_count
             })
     
-    return jsonify(results)
+    return jsonify({'top_animes': results})
