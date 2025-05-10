@@ -160,132 +160,230 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tooltips initialisieren
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Auflösungsdiagramm
-    const episodeData = {{ episodes|tojson }};
-    const episodes = episodeData.map(ep => [ep.resolution_width, ep.resolution_height]);
-    
-    const resolutionCounts = {
-        "4K": 0,
-        "Full HD": 0,
-        "HD": 0,
-        "SD": 0,
-        "Unbekannt": 0
-    };
-    
-    episodes.forEach(ep => {
-        if (!ep[0] || !ep[1]) {
-            resolutionCounts["Unbekannt"]++;
-        } else if (ep[0] >= 3840) {
-            resolutionCounts["4K"]++;
-        } else if (ep[0] >= 1920) {
-            resolutionCounts["Full HD"]++;
-        } else if (ep[0] >= 1280) {
-            resolutionCounts["HD"]++;
-        } else {
-            resolutionCounts["SD"]++;
+    try {
+        // Tooltips initialisieren
+        try {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        } catch (tooltipError) {
+            console.warn('Tooltips konnten nicht initialisiert werden:', tooltipError);
+            // Tooltips sind nicht kritisch, daher können wir ohne fortfahren
         }
-    });
+        
+        // Episodendaten sicher initialisieren
+        let episodeData = [];
+        try {
+            episodeData = {{ episodes|tojson }} || [];
+        } catch (dataError) {
+            console.error('Fehler beim Laden der Episodendaten:', dataError);
+            showError('resolutionChart', 'Fehler beim Laden der Episodendaten');
+            showError('codecChart', 'Fehler beim Laden der Episodendaten');
+            return; // Hauptfunktion beenden, da Daten fehlen
+        }
+        
+        if (!episodeData || episodeData.length === 0) {
+            showMessage('resolutionChart', 'Keine Episodendaten verfügbar');
+            showMessage('codecChart', 'Keine Episodendaten verfügbar');
+            return;
+        }
+        
+        // Auflösungsdiagramm
+        try {
+            createResolutionChart(episodeData);
+        } catch (resError) {
+            console.error('Fehler beim Erstellen des Auflösungsdiagramms:', resError);
+            showError('resolutionChart', 'Fehler beim Erstellen des Diagramms');
+        }
+        
+        // Codec-Diagramm
+        try {
+            createCodecChart(episodeData);
+        } catch (codecError) {
+            console.error('Fehler beim Erstellen des Codec-Diagramms:', codecError);
+            showError('codecChart', 'Fehler beim Erstellen des Diagramms');
+        }
+        
+    } catch (error) {
+        console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+        // Falls ein unerwarteter Fehler auftritt, zeigen wir allgemeine Fehlermeldungen auf allen Diagrammen
+        showError('resolutionChart', 'Ein unerwarteter Fehler ist aufgetreten');
+        showError('codecChart', 'Ein unerwarteter Fehler ist aufgetreten');
+    }
     
-    // Leere Kategorien entfernen
-    for (const key in resolutionCounts) {
-        if (resolutionCounts[key] === 0) {
-            delete resolutionCounts[key];
+    // Hilfsfunktion: Zeigt eine Fehlermeldung im Chart-Container an
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            const parent = container.parentElement;
+            if (parent) {
+                parent.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            }
         }
     }
     
-    const resLabels = Object.keys(resolutionCounts);
-    const resData = Object.values(resolutionCounts);
-    
-    const resColors = [
-        '#4CAF50', // 4K
-        '#2196F3', // Full HD
-        '#FFC107', // HD
-        '#9E9E9E', // SD
-        '#F44336'  // Unbekannt
-    ];
-    
-    const resCtx = document.getElementById('resolutionChart').getContext('2d');
-    new Chart(resCtx, {
-        type: 'pie',
-        data: {
-            labels: resLabels,
-            datasets: [{
-                data: resData,
-                backgroundColor: resColors.slice(0, resLabels.length),
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right'
-                }
+    // Hilfsfunktion: Zeigt eine Informationsmeldung im Chart-Container an
+    function showMessage(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            const parent = container.parentElement;
+            if (parent) {
+                parent.innerHTML = `<div class="alert alert-info">${message}</div>`;
             }
         }
-    });
+    }
     
-    // Codec-Diagramm
-    // Verwende die bereits geladenen Episodendaten
-    const episodeCodecs = episodeData.map(ep => ep.video_codec);
+    // Funktion zum Erstellen des Auflösungsdiagramms
+    function createResolutionChart(episodeData) {
+        // Sicherstellen, dass das Canvas-Element existiert
+        const resCtx = document.getElementById('resolutionChart');
+        if (!resCtx) {
+            console.error('Canvas-Element für Auflösungsdiagramm nicht gefunden');
+            return;
+        }
+        
+        // Episodendaten konvertieren und auf fehlende Eigenschaften prüfen
+        const episodes = episodeData.map(ep => {
+            return [
+                ep && ep.resolution_width ? ep.resolution_width : null,
+                ep && ep.resolution_height ? ep.resolution_height : null
+            ];
+        });
+        
+        const resolutionCounts = {
+            "4K": 0,
+            "Full HD": 0,
+            "HD": 0,
+            "SD": 0,
+            "Unbekannt": 0
+        };
+        
+        episodes.forEach(ep => {
+            if (!ep || !ep[0] || !ep[1]) {
+                resolutionCounts["Unbekannt"]++;
+            } else if (ep[0] >= 3840) {
+                resolutionCounts["4K"]++;
+            } else if (ep[0] >= 1920) {
+                resolutionCounts["Full HD"]++;
+            } else if (ep[0] >= 1280) {
+                resolutionCounts["HD"]++;
+            } else {
+                resolutionCounts["SD"]++;
+            }
+        });
+        
+        // Leere Kategorien entfernen
+        const nonEmptyCategories = {};
+        for (const key in resolutionCounts) {
+            if (resolutionCounts[key] > 0) {
+                nonEmptyCategories[key] = resolutionCounts[key];
+            }
+        }
+        
+        // Wenn keine Daten vorhanden sind, Nachricht anzeigen
+        if (Object.keys(nonEmptyCategories).length === 0) {
+            showMessage('resolutionChart', 'Keine Auflösungsdaten verfügbar');
+            return;
+        }
+        
+        const resLabels = Object.keys(nonEmptyCategories);
+        const resData = Object.values(nonEmptyCategories);
+        
+        const resColors = [
+            '#4CAF50', // 4K
+            '#2196F3', // Full HD
+            '#FFC107', // HD
+            '#9E9E9E', // SD
+            '#F44336'  // Unbekannt
+        ];
+        
+        new Chart(resCtx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: resLabels,
+                datasets: [{
+                    data: resData,
+                    backgroundColor: resColors.slice(0, resLabels.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
     
-    const codecCounts = {};
-    episodeCodecs.forEach(codec => {
-        const codecName = codec || 'Unbekannt';
-        codecCounts[codecName] = (codecCounts[codecName] || 0) + 1;
-    });
-    
-    const codecLabels = Object.keys(codecCounts);
-    const codecData = Object.values(codecCounts);
-    
-    // Zufällige Farben für Codecs
-    const getRandomColors = (count) => {
-        const colors = [];
+    // Funktion zum Erstellen des Codec-Diagramms
+    function createCodecChart(episodeData) {
+        // Sicherstellen, dass das Canvas-Element existiert
+        const codecCtx = document.getElementById('codecChart');
+        if (!codecCtx) {
+            console.error('Canvas-Element für Codec-Diagramm nicht gefunden');
+            return;
+        }
+        
+        // Episodendaten konvertieren und auf fehlende Eigenschaften prüfen
+        const episodeCodecs = episodeData.map(ep => ep && ep.video_codec ? ep.video_codec : null);
+        
+        const codecCounts = {};
+        episodeCodecs.forEach(codec => {
+            const codecName = codec || 'Unbekannt';
+            codecCounts[codecName] = (codecCounts[codecName] || 0) + 1;
+        });
+        
+        // Wenn keine Daten vorhanden sind, Nachricht anzeigen
+        if (Object.keys(codecCounts).length === 0) {
+            showMessage('codecChart', 'Keine Codec-Daten verfügbar');
+            return;
+        }
+        
+        const codecLabels = Object.keys(codecCounts);
+        const codecData = Object.values(codecCounts);
+        
+        // Farben für Codecs
         const baseColors = [
             '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', 
             '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad'
         ];
         
-        for (let i = 0; i < count; i++) {
-            colors.push(baseColors[i % baseColors.length]);
-        }
-        return colors;
-    };
-    
-    const codecCtx = document.getElementById('codecChart').getContext('2d');
-    new Chart(codecCtx, {
-        type: 'bar',
-        data: {
-            labels: codecLabels,
-            datasets: [{
-                label: 'Anzahl',
-                data: codecData,
-                backgroundColor: getRandomColors(codecLabels.length),
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+        const codecColors = codecLabels.map((_, index) => 
+            baseColors[index % baseColors.length]
+        );
+        
+        new Chart(codecCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: codecLabels,
+                datasets: [{
+                    label: 'Anzahl',
+                    data: codecData,
+                    backgroundColor: codecColors,
+                    borderWidth: 1
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 {% endblock %}
