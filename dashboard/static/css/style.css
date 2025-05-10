@@ -25,12 +25,13 @@
     --danger-color: #e74c3c;
     --warning-color: #f39c12;
     --info-color: #1abc9c;
-    --light-color: #1a1a1a;
+    --light-color: #d0d6db; /* Heller für bessere Lesbarkeit */
     --dark-color: #121212;
     --body-bg: #121212;
     --card-bg: #1e1e1e;
     --text-color: #f0f0f0;
     --border-color: #333333;
+    --muted-color: #a8b5c5; /* Neue Variable für gedämpfte Texte */
 }
 
 body {
@@ -139,6 +140,15 @@ body {
 
 .dark-mode .media-info-label {
     color: var(--light-color);
+}
+
+/* Verbesserte Lesbarkeit für gedämpfte Texte im Dark Mode */
+.dark-mode .text-muted {
+    color: #a8b5c5 !important; /* Helleres Grau für bessere Lesbarkeit */
+}
+
+.dark-mode .small.text-muted {
+    color: #b0bfd1 !important; /* Noch helleres Grau für kleine gedämpfte Texte */
 }
 
 .media-thumbnail {

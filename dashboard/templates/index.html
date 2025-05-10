@@ -167,10 +167,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Hilfsfunktionen für Fehlerbehandlung
-    function showError(containerId, message) {
+    function showError(containerId, message, error = null) {
         const container = document.getElementById(containerId);
         if (container) {
-            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            container.innerHTML = `
+                <div class="alert alert-danger mb-0 text-center" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>${message}
+                </div>
+            `;
+        }
+        
+        // Nur ein echtes Fehlerdetail loggen, wenn ein tatsächlicher Fehler übergeben wurde
+        if (error) {
+            console.error(`[ERROR] Fehler beim Laden von ${containerId}:`, error);
         }
     }
     
@@ -207,32 +216,31 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 try {
-                    if (!data) {
-                        showMessage('collection-stats', 'Keine Statistikdaten verfügbar');
+                    // Prüfen, ob Daten vorhanden sind
+                    if (!data || typeof data !== 'object') {
+                        showMessage('collection-stats', 'Keine Statistiken verfügbar');
                         return;
                     }
                     
-                    // Sammlungsstatistiken anzeigen
-                    let statsHtml = `
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Animes:</span>
-                            <strong>${data.animes_count || 0}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Staffeln:</span>
-                            <strong>${data.seasons_count || 0}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Episoden:</span>
-                            <strong>${data.episodes_count || 0}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Dateigröße:</span>
-                            <strong>${data.total_size_formatted || 'Unbekannt'}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Länge:</span>
-                            <strong>${data.total_duration_formatted || 'Unbekannt'}</strong>
+                    // Basis-Statistiken anzeigen - mit sicheren Standardwerten
+                    const animesCount = data.animes_count || 0;
+                    const seasonsCount = data.seasons_count || 0;
+                    const episodesCount = data.episodes_count || 0;
+                    
+                    const statsHtml = `
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h3>${animesCount}</h3>
+                                <p>Animes</p>
+                            </div>
+                            <div class="col-4">
+                                <h3>${seasonsCount}</h3>
+                                <p>Staffeln</p>
+                            </div>
+                            <div class="col-4">
+                                <h3>${episodesCount}</h3>
+                                <p>Episoden</p>
+                            </div>
                         </div>
                     `;
                     document.getElementById('collection-stats').innerHTML = statsHtml;
@@ -250,67 +258,68 @@ document.addEventListener('DOMContentLoaded', function() {
                         showMessage('format-stats', 'Keine Codec-Daten verfügbar');
                     }
                 } catch (error) {
-                    console.error('Fehler bei der Verarbeitung der Statistiken:', error);
+                    console.error('Fehler bei der Verarbeitung der allgemeinen Statistiken:', error);
                     showError('collection-stats', 'Fehler bei der Datenverarbeitung');
                     showError('format-stats', 'Fehler bei der Datenverarbeitung');
                 }
             })
             .catch(error => {
-                console.error('Fehler beim Laden der Statistiken:', error);
-                showError('collection-stats', 'Fehler beim Laden der Daten');
-                showError('format-stats', 'Fehler beim Laden der Daten');
+                console.error('Fehler beim Laden der Statistikdaten:', error);
+                showError('collection-stats', 'Fehler beim Laden der Daten', error);
+                showError('format-stats', 'Fehler beim Laden der Daten', error);
             });
     } catch (error) {
         console.error('Fehler beim Ausführen des API-Aufrufs für Statistiken:', error);
-        showError('collection-stats', 'Fehler beim Laden der Daten');
-        showError('format-stats', 'Fehler beim Laden der Daten');
+        showError('collection-stats', 'Fehler beim Laden der Daten', error);
+        showError('format-stats', 'Fehler beim Laden der Daten', error);
     }
     
-    // Top Animes laden
-    try {
-        fetch('/api/stats/top_animes')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                try {
-                    if (!data || !data.top_animes || !Array.isArray(data.top_animes)) {
-                        showMessage('top-animes', 'Keine Anime-Daten verfügbar');
-                        return;
+    // Top-Animes laden
+    function fetchTopAnimes() {
+        try {
+            fetch('/api/stats/topanimes')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
                     }
-                    
-                    if (data.top_animes.length === 0) {
-                        showMessage('top-animes', 'Keine Top-Animes verfügbar');
-                        return;
+                    return response.json();
+                })
+                .then(data => {
+                    try {
+                        // Top-Animes anzeigen
+                        if (data.animes && data.animes.length > 0) {
+                            let topAnimesHtml = '';
+                            data.animes.forEach(anime => {
+                                topAnimesHtml += `
+                                    <a href="${anime.id ? '/anime/' + anime.id : '#'}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">${anime.name || 'Unbekannt'}</h6>
+                                            <small class="text-muted">${anime.episode_count || 0} Episoden</small>
+                                        </div>
+                                    </a>
+                                `;
+                            });
+                            document.getElementById('top-animes').innerHTML = topAnimesHtml;
+                        } else {
+                            document.getElementById('top-animes').innerHTML = `
+                                <div class="list-group-item text-center">
+                                    <p class="mb-0">Keine Animes vorhanden</p>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Fehler bei der Verarbeitung der Top-Animes:', error);
+                        showError('top-animes', 'Fehler bei der Datenverarbeitung');
                     }
-                    
-                    let topHtml = '<ul class="list-group list-group-flush">';
-                    for (const anime of data.top_animes) {
-                        if (!anime) continue;
-                        topHtml += `
-                        <a href="/anime/${anime.id || 0}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            ${anime.name || 'Unbenannter Anime'}
-                            <span class="badge bg-primary rounded-pill">${anime.episode_count || 0} Episoden</span>
-                        </a>
-                    `;
-                    }
-                    topHtml += '</ul>';
-                    document.getElementById('top-animes').innerHTML = topHtml;
-                } catch (error) {
-                    console.error('Fehler bei der Verarbeitung der Top-Animes:', error);
-                    showError('top-animes', 'Fehler bei der Datenverarbeitung');
-                }
-            })
-            .catch(error => {
-                console.error('Fehler beim Laden der Top-Animes:', error);
-                showError('top-animes', 'Fehler beim Laden der Daten');
-            });
-    } catch (error) {
-        console.error('Fehler beim Ausführen des API-Aufrufs für Top-Animes:', error);
-        showError('top-animes', 'Fehler beim Laden der Daten');
+                })
+                .catch(error => {
+                    console.error('Fehler beim Laden der Top-Animes:', error);
+                    showError('top-animes', 'Fehler beim Laden der Daten', error);
+                });
+        } catch (error) {
+            console.error('Fehler beim Ausführen des API-Aufrufs für Top-Animes:', error);
+            showError('top-animes', 'Fehler beim Laden der Daten', error);
+        }
     }
     
     // Auflösungsdiagramm laden
@@ -320,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        fetch('/api/stats/resolution?chart=true')
+        fetch('/api/stats/resolution')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
@@ -329,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 try {
-                    if (!data || !data.distribution) {
+                    if (!data || !data.distribution || Object.keys(data.distribution).length === 0) {
                         showMessage('resolution-chart-container', 'Keine Auflösungsdaten verfügbar');
                         return;
                     }
@@ -380,11 +389,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Fehler beim Laden des Auflösungsdiagramms:', error);
-                showError('resolution-chart-container', 'Fehler beim Laden der Daten');
+                showError('resolution-chart-container', 'Fehler beim Laden der Daten', error);
             });
     } catch (error) {
         console.error('Fehler beim Ausführen des API-Aufrufs für Auflösungen:', error);
-        showError('resolution-chart-container', 'Fehler beim Laden der Daten');
+        showError('resolution-chart-container', 'Fehler beim Laden der Daten', error);
     }
     
     // HDR-Diagramm laden
@@ -403,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 try {
-                    if (!data || !data.distribution) {
+                    if (!data || !data.distribution || Object.keys(data.distribution).length === 0) {
                         showMessage('hdr-chart-container', 'Keine HDR-Daten verfügbar');
                         return;
                     }
@@ -453,11 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Fehler beim Laden des HDR-Diagramms:', error);
-                showError('hdr-chart-container', 'Fehler beim Laden der Daten');
+                showError('hdr-chart-container', 'Fehler beim Laden der Daten', error);
             });
     } catch (error) {
         console.error('Fehler beim Ausführen des API-Aufrufs für HDR-Formate:', error);
-        showError('hdr-chart-container', 'Fehler beim Laden der Daten');
+        showError('hdr-chart-container', 'Fehler beim Laden der Daten', error);
     }
 });
 </script>

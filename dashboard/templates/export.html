@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Daten exportieren - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Daten exportieren{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Startseite</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Daten exportieren</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-export me-2"></i>Datenexport
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Auf dieser Seite können Sie Daten aus der Anime-Loads Bibliothek in verschiedene Formate exportieren. 
+                    Dies ist nützlich für Backups, die Verwendung mit anderen Anwendungen oder für Datenanalysen.
+                </p>
+                
+                <form>
+                    <div class="mb-3">
+                        <label for="exportType" class="form-label">Exporttyp</label>
+                        <select class="form-select" id="exportType">
+                            <option value="full" selected>Vollständiger Export (alle Daten)</option>
+                            <option value="animes">Nur Animes</option>
+                            <option value="seasons">Animes und Staffeln</option>
+                            <option value="stats">Nur Statistiken</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="exportFormat" class="form-label">Format</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="json" selected>JSON</option>
+                            <option value="csv">CSV</option>
+                            <option value="xml">XML</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeTechnicalInfo" checked>
+                            <label class="form-check-label" for="includeTechnicalInfo">
+                                Technische Informationen einbeziehen (Codecs, Auflösung)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeFilePaths" checked>
+                            <label class="form-check-label" for="includeFilePaths">
+                                Dateipfade einbeziehen
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" id="startExportBtn">
+                        <i class="fas fa-download me-1"></i>Export starten
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>Vorherige Exporte
+            </div>
+            <div class="card-body">
+                <div id="exportHistory">
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Vollständiger Export</h6>
+                                <small class="text-muted">10.05.2025</small>
+                            </div>
+                            <p class="mb-1">JSON-Format, 1.2 MB</p>
+                            <small class="text-muted"><i class="fas fa-file-download me-1"></i>export_20250510_120000.json</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Statistik-Export</h6>
+                                <small class="text-muted">09.05.2025</small>
+                            </div>
+                            <p class="mb-1">CSV-Format, 68 KB</p>
+                            <small class="text-muted"><i class="fas fa-file-download me-1"></i>stats_20250509_183000.csv</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startExportBtn = document.getElementById('startExportBtn');
+    const exportType = document.getElementById('exportType');
+    const exportFormat = document.getElementById('exportFormat');
+    
+    // Platzhalter für die Export-Funktion
+    // In einer echten Implementierung würde hier ein AJAX-Call erfolgen
+    startExportBtn.addEventListener('click', function() {
+        // Einfache Validierung
+        if (!exportType.value || !exportFormat.value) {
+            alert('Bitte wähle einen Exporttyp und ein Format.');
+            return;
+        }
+        
+        // Simulation eines Downloads
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+        const filename = `anime_loads_${exportType.value}_${timestamp}.${exportFormat.value}`;
+        
+        // Informiere den Benutzer
+        alert(`Der Export wurde gestartet!\n\nDie Datei '${filename}' wird nach Abschluss des Exports zum Download bereitgestellt.\n\nIn einer tatsächlichen Implementierung würde diese Funktion einen echten Export durchführen.`);
+    });
+});
+</script>
+{% endblock %}

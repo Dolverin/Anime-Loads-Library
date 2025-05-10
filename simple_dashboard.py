@@ -247,7 +247,263 @@ def calculate_stats():
 @app.route('/api/stats')
 def api_stats():
     """API-Endpunkt für Dashboard-Statistiken."""
-    return jsonify(calculate_stats())
+    try:
+        stats = calculate_stats()
+        app.logger.info(f"Stats API erfolgreich aufgerufen: {len(stats.keys())} Statistik-Schlüssel zurückgegeben")
+        return jsonify(stats)
+    except Exception as e:
+        app.logger.error(f"Fehler beim Berechnen der Statistiken: {str(e)}")
+        return jsonify({'error': str(e), 'type': str(type(e).__name__)}), 500
+
+@app.route('/api/stats/resolution')
+def api_stats_resolution():
+    """API-Endpunkt für Auflösungsstatistiken."""
+    try:
+        # Auflösungsverteilung direkt abfragen
+        resolution_query = """
+        SELECT 
+            CASE 
+                WHEN resolution_width >= 3840 THEN '4K' 
+                WHEN resolution_width >= 1920 THEN 'Full HD' 
+                WHEN resolution_width >= 1280 THEN 'HD'
+                WHEN resolution_width > 0 THEN 'SD'
+                ELSE 'Unbekannt'
+            END as resolution,
+            COUNT(*) as count
+        FROM episodes
+        GROUP BY resolution
+        ORDER BY count DESC
+        """
+        
+        resolution_data = execute_query(resolution_query)
+        
+        # Speichernutzung nach Auflösung
+        storage_query = """
+        SELECT 
+            CASE 
+                WHEN resolution_width >= 3840 THEN '4K' 
+                WHEN resolution_width >= 1920 THEN 'Full HD' 
+                WHEN resolution_width >= 1280 THEN 'HD'
+                WHEN resolution_width > 0 THEN 'SD'
+                ELSE 'Unbekannt'
+            END as resolution,
+            SUM(file_size) as total_size
+        FROM episodes
+        GROUP BY resolution
+        ORDER BY total_size DESC
+        """
+        
+        storage_data = execute_query(storage_query)
+        
+        # Daten für das Frontend vorbereiten
+        distribution = []
+        storage = {}
+        
+        for item in resolution_data:
+            distribution.append({
+                'resolution': item['resolution'],
+                'count': item['count']
+            })
+        
+        for item in storage_data:
+            storage[item['resolution']] = item['total_size']
+        
+        # Wenn keine Daten vorhanden sind, Standardwerte zurückgeben
+        if not distribution:
+            distribution = [{'resolution': 'Keine Daten', 'count': 0}]
+        
+        logger.info(f"Auflösungs-Distribution: {distribution}")
+        return jsonify({
+            'distribution': distribution,
+            'storage': storage
+        })
+    except Exception as e:
+        logger.error(f"Fehler beim Berechnen der Auflösungsstatistiken: {str(e)}")
+        return jsonify({
+            'error': str(e), 
+            'distribution': [{'resolution': 'Fehler', 'count': 0}],
+            'storage': {}
+        }), 500
+
+@app.route('/api/stats/hdr')
+def api_stats_hdr():
+    """API-Endpunkt für HDR-Statistiken."""
+    try:
+        is_chart = request.args.get('chart') == 'true'
+        
+        # HDR-Verteilung nach Formaten abfragen
+        hdr_query = """
+        SELECT 
+            CASE 
+                WHEN hdr_format = 'HDR10' THEN 'HDR10'
+                WHEN hdr_format = 'HDR10+' THEN 'HDR10+'
+                WHEN hdr_format = 'Dolby Vision' THEN 'Dolby Vision'
+                WHEN hdr_format = 'HLG' THEN 'HLG'
+                WHEN hdr_format IS NULL OR hdr_format = '' THEN 'Kein HDR'
+                ELSE hdr_format
+            END as format,
+            COUNT(*) as count
+        FROM episodes
+        GROUP BY format
+        ORDER BY count DESC
+        """
+        
+        hdr_distribution = execute_query(hdr_query)
+        
+        # Daten für das Frontend vorbereiten
+        distribution = []
+        
+        for item in hdr_distribution:
+            distribution.append({
+                'format': item['format'],
+                'count': item['count']
+            })
+            
+        # Wenn keine Daten vorhanden sind, Standardwerte zurückgeben
+        if not distribution:
+            distribution = [{'format': 'Keine Daten', 'count': 0}]
+        
+        logger.info(f"HDR-Distribution: {distribution}")
+        return jsonify({
+            'distribution': distribution
+        })
+    except Exception as e:
+        logger.error(f"Fehler beim Berechnen der HDR-Statistiken: {str(e)}")
+        return jsonify({
+            'error': str(e), 
+            'distribution': [{'format': 'Fehler', 'count': 0}]
+        }), 500
+
+@app.route('/api/stats/codec')
+def api_stats_codec():
+    """API-Endpunkt für Codec-Statistiken."""
+    try:
+        # Codec-Verteilung direkt abfragen
+        codec_query = """
+        SELECT 
+            CASE 
+                WHEN video_codec LIKE '%HEVC%' OR video_codec LIKE '%x265%' THEN 'HEVC'
+                WHEN video_codec LIKE '%AVC%' OR video_codec LIKE '%x264%' THEN 'AVC'
+                WHEN video_codec LIKE '%AV1%' THEN 'AV1'
+                WHEN video_codec LIKE '%VP9%' THEN 'VP9'
+                WHEN video_codec LIKE '%MPEG%' THEN 'MPEG'
+                WHEN video_codec IS NULL OR video_codec = '' THEN 'Unbekannt'
+                ELSE video_codec
+            END as codec,
+            COUNT(*) as count
+        FROM episodes
+        GROUP BY codec
+        ORDER BY count DESC
+        """
+        
+        codec_distribution = execute_query(codec_query)
+        
+        # Daten für das Frontend vorbereiten
+        distribution = []
+        
+        for item in codec_distribution:
+            distribution.append({
+                'codec': item['codec'],
+                'count': item['count']
+            })
+            
+        # Wenn keine Daten vorhanden sind, Standardwerte zurückgeben
+        if not distribution:
+            distribution = [{'codec': 'Keine Daten', 'count': 0}]
+            
+        logger.info(f"Codec-Distribution: {distribution}")
+        return jsonify({
+            'distribution': distribution
+        })
+    except Exception as e:
+        logger.error(f"Fehler beim Berechnen der Codec-Statistiken: {str(e)}")
+        return jsonify({
+            'error': str(e), 
+            'distribution': [{'codec': 'Fehler', 'count': 0}]
+        }), 500
+
+
+@app.route('/api/container')
+def api_container():
+    """API-Endpunkt für Container-Statistiken."""
+    try:
+        # Berechnung der Container-Verteilung
+        container_data = execute_query("""
+            SELECT 
+                CASE
+                    WHEN container LIKE '%.mp4%' THEN 'MP4'
+                    WHEN container LIKE '%.mkv%' THEN 'MKV'
+                    WHEN container LIKE '%.avi%' THEN 'AVI'
+                    WHEN container LIKE '%.mov%' THEN 'MOV'
+                    WHEN container LIKE '%.wmv%' THEN 'WMV'
+                    ELSE IFNULL(container, 'Unbekannt')
+                END as container,
+                COUNT(*) as count
+            FROM episodes
+            WHERE container IS NOT NULL
+            GROUP BY container
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        
+        # Standardwert falls keine Daten gefunden wurden
+        if not container_data:
+            container_data = [{'container': 'Keine Daten', 'count': 0}]
+            
+        logger.info(f"Container-Distribution: {container_data}")
+        return jsonify({'container_distribution': container_data})
+    except Exception as e:
+        logger.error(f"Fehler beim Berechnen der Container-Statistiken: {str(e)}")
+        return jsonify({'error': str(e), 'container_distribution': [{'container': 'Fehler', 'count': 0}]}), 500
+
+@app.route('/api/stats/topanimes')
+def api_stats_topanimes():
+    """API-Endpunkt für Top-Animes-Statistiken."""
+    try:
+        stats = calculate_stats()
+        sort_by = request.args.get('sort', 'episodes')  # episodes oder size
+        
+        if 'top_animes' in stats:
+            return jsonify({'animes': stats['top_animes']})
+        else:
+            return jsonify({'animes': []})
+    except Exception as e:
+        app.logger.error(f"Fehler beim Berechnen der Top-Animes: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats/top_animes')
+def api_stats_top_animes():
+    """Alternativer API-Endpunkt für Top-Animes-Statistiken (für die Statistikseite)."""
+    try:
+        stats = calculate_stats()
+        sort_by = request.args.get('sort_by', 'episodes')  # episodes oder size
+        
+        if 'top_animes' in stats:
+            # Formatiere die Daten für die Statistikseite anders
+            top_animes = stats['top_animes']
+            for anime in top_animes:
+                if 'size_bytes' in anime:
+                    # Formatiere Größe in lesbares Format
+                    size_bytes = anime['size_bytes']
+                    if size_bytes < 1024**3:  # Kleiner als 1 GB
+                        anime['size_formatted'] = f"{size_bytes / 1024**2:.2f} MB"
+                    elif size_bytes < 1024**4:  # Kleiner als 1 TB
+                        anime['size_formatted'] = f"{size_bytes / 1024**3:.2f} GB"
+                    else:
+                        anime['size_formatted'] = f"{size_bytes / 1024**4:.2f} TB"
+                else:
+                    anime['size_formatted'] = 'Unbekannt'
+            
+            # Sortieren nach dem gewünschten Kriterium
+            if sort_by == 'size':
+                top_animes.sort(key=lambda x: x.get('size_bytes', 0), reverse=True)
+            
+            return jsonify(top_animes)
+        else:
+            return jsonify([])
+    except Exception as e:
+        app.logger.error(f"Fehler beim Berechnen der Top-Animes: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search')
 def api_search():
@@ -493,6 +749,25 @@ def not_found_error(error):
 def internal_error(error):
     """Behandelt 500-Fehler."""
     return render_template('errors/500.html'), 500
+
+# Zusätzliche Routen für die Verwaltung
+@app.route('/update_metadata')
+def update_metadata():
+    """Zeigt die Seite zum Aktualisieren von Metadaten an.
+    
+    Diese Funktion ist derzeit ein Platzhalter und könnte später implementiert werden,
+    um Metadaten aus den Mediendateien neu einzulesen und die Datenbank zu aktualisieren.
+    """
+    return render_template('update_metadata.html')
+
+@app.route('/export')
+def export():
+    """Zeigt die Seite zum Exportieren von Daten an.
+    
+    Diese Funktion ist derzeit ein Platzhalter und könnte später implementiert werden,
+    um Daten aus der Datenbank zu exportieren (z.B. als CSV, JSON, etc.).
+    """
+    return render_template('export.html')
 
 # Kontext-Prozessor für Template-Variablen
 @app.context_processor

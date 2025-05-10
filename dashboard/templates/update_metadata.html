@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Metadaten aktualisieren - Anime-Loads Dashboard{% endblock %}
+
+{% block header %}Metadaten aktualisieren{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Startseite</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Metadaten aktualisieren</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-sync me-2"></i>Metadaten-Aktualisierung
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Diese Funktion ermöglicht es, die Metadaten für alle Anime-Dateien in der Bibliothek zu aktualisieren.
+                    Durch die Aktualisierung werden Informationen wie Auflösung, Codec, Dateigröße und andere technische Details neu eingelesen.
+                </p>
+                
+                <form>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="updateResolution" checked>
+                            <label class="form-check-label" for="updateResolution">
+                                Auflösung und Bitrate aktualisieren
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="updateCodecs" checked>
+                            <label class="form-check-label" for="updateCodecs">
+                                Video- und Audio-Codecs aktualisieren
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="updateFileInfo" checked>
+                            <label class="form-check-label" for="updateFileInfo">
+                                Datei-Informationen aktualisieren (Größe, Pfad)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="updateScope" id="updateAll" value="all" checked>
+                            <label class="form-check-label" for="updateAll">
+                                Alle Animes aktualisieren
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="updateScope" id="updateMissing" value="missing">
+                            <label class="form-check-label" for="updateMissing">
+                                Nur fehlende Metadaten aktualisieren
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" id="startUpdateBtn">
+                        <i class="fas fa-sync me-1"></i>Aktualisierung starten
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Status
+            </div>
+            <div class="card-body">
+                <div id="updateStatus">
+                    <div class="alert alert-info">
+                        Bereit zur Aktualisierung der Metadaten.
+                    </div>
+                </div>
+                
+                <div id="progressContainer" class="d-none">
+                    <label class="form-label">Fortschritt:</label>
+                    <div class="progress mb-3">
+                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+                    <small id="progressDetails" class="text-muted">Warte auf Start...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startUpdateBtn = document.getElementById('startUpdateBtn');
+    const updateStatus = document.getElementById('updateStatus');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressDetails = document.getElementById('progressDetails');
+    
+    // Platzhalter für die Aktualisierungsfunktion
+    // In einer echten Implementierung würde hier ein AJAX-Call erfolgen
+    startUpdateBtn.addEventListener('click', function() {
+        // Status ändern
+        updateStatus.innerHTML = '<div class="alert alert-warning">Aktualisierung läuft...</div>';
+        
+        // Fortschrittsanzeige einblenden
+        progressContainer.classList.remove('d-none');
+        
+        // Fortschritt simulieren
+        let progress = 0;
+        const interval = setInterval(function() {
+            progress += Math.floor(Math.random() * 10) + 1;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                
+                // Aktualisierung abgeschlossen
+                updateStatus.innerHTML = '<div class="alert alert-success">Aktualisierung erfolgreich abgeschlossen!</div>';
+                
+                // Statistik anzeigen (Platzhalter)
+                progressDetails.textContent = 'Aktualisiert: 42 Animes, 156 Staffeln, 2380 Episoden';
+            } else {
+                // Fortschritt aktualisieren
+                progressDetails.textContent = `Verarbeite Dateien... (${progress}%)`;
+            }
+            
+            // Fortschrittsbalken aktualisieren
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+        }, 500);
+    });
+});
+</script>
+{% endblock %}
