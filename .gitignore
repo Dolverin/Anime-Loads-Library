@@ -1,4 +1,19 @@
+# Virtuelle Umgebung
 venv/
+
+# Logs
 *.log
+
+# Python Cache-Dateien
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Konfigurationsdateien mit sensiblen Daten
 .env
+
+# Temporäre Test-Dateien
+test_*.py
+
+# Generierte Export-Dateien
+**/exports/
