@@ -60,35 +60,36 @@ app.logger.addHandler(handler)
 app.logger.setLevel(LOG_LEVEL)
 app.logger.info('Anime-Loads Dashboard startet...')
 
+# Context-Processor: Stellt 'now' für alle Templates bereit
+@app.context_processor
+def inject_now():
+    return {'now': datetime.now()}
+
 # Datenbankmodelle importieren und initialisieren
 from models import db
 db.init_app(app)
 
-# Zeitplaner für regelmäßige Aufgaben initialisieren
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
+# --- DEBUG: Scheduler und API-Blueprint temporär deaktiviert ---
+# scheduler = APScheduler()
+# scheduler.init_app(app)
+# scheduler.start()
 
-# Anime-Archiver importieren
-from anime_archiver import setup_database, update_episodes_metadata
+# from anime_archiver import setup_database, update_episodes_metadata
+# from api import api
+# app.register_blueprint(api)
 
-# API Blueprint einbinden
-from api import api
-app.register_blueprint(api)
-
-# Scheduler-Jobs konfigurieren
-@scheduler.task('cron', id='update_metadata', hour=UPDATE_TIME.split(':')[0], minute=UPDATE_TIME.split(':')[1])
-def scheduled_metadata_update():
-    """Task, der regelmäßig die Metadaten aktualisiert."""
-    app.logger.info('Starte geplante Metadatenaktualisierung...')
-    
-    try:
-        connection = db.engine.raw_connection()
-        update_episodes_metadata(connection)
-        connection.close()
-        app.logger.info('Metadatenaktualisierung abgeschlossen.')
-    except Exception as e:
-        app.logger.error(f'Fehler bei der Metadatenaktualisierung: {e}')
+# @scheduler.task('cron', id='update_metadata', hour=UPDATE_TIME.split(':')[0], minute=UPDATE_TIME.split(':')[1])
+# def scheduled_metadata_update():
+#     """Task, der regelmäßig die Metadaten aktualisiert."""
+#     app.logger.info('Starte geplante Metadatenaktualisierung...')
+#     try:
+#         connection = db.engine.raw_connection()
+#         update_episodes_metadata(connection)
+#         connection.close()
+#         app.logger.info('Metadatenaktualisierung abgeschlossen.')
+#     except Exception as e:
+#         app.logger.error(f'Fehler bei der Metadatenaktualisierung: {e}')
+# --- DEBUG-END ---
 
 # Eigene HTML-Export-Funktion, da die original-Funktion nicht verfügbar ist
 def export_metadata_to_html(connection, output_file):
@@ -177,7 +178,9 @@ def export_metadata_to_html(connection, output_file):
     cursor.close()
     return output_file
 
-@scheduler.task('interval', id='export_html', hours=12)
+# --- DEBUG: Scheduler-Aufruf temporär deaktiviert ---
+# @scheduler.task('interval', id='export_html', hours=12)
+# --- DEBUG-END ---
 def scheduled_html_export():
     """Task, der regelmäßig eine HTML-Exportdatei erstellt."""
     app.logger.info('Exportiere Metadaten als HTML...')
